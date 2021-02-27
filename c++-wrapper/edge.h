@@ -22,83 +22,27 @@
 //  SOFTWARE.
 //  
 
-#if !defined(GV_GRAPH_H)
-#define GV_GRAPH_H
+#if !defined(GV_EDGE_H)
+#define GV_EDGE_H
 
 #include "object.h"
 
-#include <functional>
-#include <iosfwd>
-#include <iterator>
-#include <memory>
-#include <optional>
-#include <vector>
-
 namespace gv
 {
-    class edge;
-    class node;
-
-    class graph final
+    class edge final
         : public object
     {
     public:
-        enum class desc_t
-        {
-            directed,
-            strict_directed,
-            undirected,
-            strict_undirected
-        };
-
-        graph(const factory_t& f);
-
-        graph(const char* name, desc_t desc);
-
-        graph(std::istream& in);
-
-        graph(const std::string& str);
-
-        ~graph();
-
-        node
-        create_node(const char* name = nullptr);
-
-        node
-        create_node(id_t id);
-
-        std::vector<std::reference_wrapper<edge>>
-        edges() const;
-
-        std::optional<node>
-        find_node(const char* name);
-
-        std::optional<node>
-        find_node(id_t id);
-
+        edge(const factory_t& f);
         /*
-        CGRAPH_API Agnode_t *agfstnode(Agraph_t * g);
-        CGRAPH_API Agnode_t *agnxtnode(Agraph_t * g, Agnode_t * n);
+;        CGRAPH_API Agedge_t *agfstedge(Agraph_t * g);
+        CGRAPH_API Agedge_t *agnxtedge(Agraph_t * g, Agedge_t * n);
+        CGRAPH_API Agedge_t *aglstedge(Agraph_t * g);
+        CGRAPH_API Agedge_t *agprvedge(Agraph_t * g, Agedge_t * n);
         */
 
-        bool
-        is_directed() const;
-
-        bool
-        is_simple() const;
-
-        bool
-        is_strict() const;
-        
-        bool
-        is_undirected() const;
-
-        std::vector<node>
-        nodes() const;
-
-    private:
-        struct impl_t;
+        ~edge();
     };
 }
 
-#endif // GV_GRAPH_H
+#endif // GV_EDGE_H

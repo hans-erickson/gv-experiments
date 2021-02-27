@@ -29,77 +29,61 @@
 
 #include <string>
 
-auto get_ptr = gv::common_impl::get_agraph_ptr;
-
 namespace gv
 {
-    struct node::impl_t
-    {
-        impl_t(Agnode_t* ag)
-            : agnode(ag)
-        {
-        }
-
-        std::string
-        name() const
-        {
-            return agnameof(agnode);
-        }
-
-        Agnode_t* agnode = nullptr;
-    };
-
     node::node(const factory_t& f)
-        : impl_(std::make_unique<impl_t>(f.ptr))
+        : object(f)
     {
     }
 
     node::~node() = default;
 
-    std::string
-    node::name() const
+    bool
+    node::operator==(const node& other) const
     {
-        return impl_->name();
+        return (shared_obj() == other.shared_obj());
     }
 
-    /*
-    struct node::impl_t
+    std::vector<edge>
+    node::in_edges() const
     {
-        impl_t(Agnode_t* ag)
-            : agnode(ag)
+        std::vector<edge> result;
+
+        auto g = agraphof(const_cast<void*>(shared_obj()));
+        auto this_node = reinterpret_cast<Agnode_t*>(const_cast<void*>(shared_obj()));
+        
+        for (auto e = agfstin(g, this_node); e != nullptr; e = agnxtin(g, e))
         {
+            result.push_back(factory_t{e});
         }
 
-        Agnode_t* agnode = nullptr;
-    };
-    
-    node::node(graph& gr,
-               const char* name,
-               bool create)
+        return result;
+    }
+        
+    std::vector<edge>
+    node::out_edges() const
     {
-        std::string s(name);
-        s.push_back('\0');
-        impl_ = std::make_unique<impl_t>(agnode(get_ptr(gr), s.data(), create));
+        std::vector<edge> result;
+
+        auto g = agraphof(const_cast<void*>(shared_obj()));
+        auto this_node = reinterpret_cast<Agnode_t*>(const_cast<void*>(shared_obj()));
+        
+        for (auto e = agfstout(g, this_node); e != nullptr; e = agnxtout(g, e))
+        {
+            result.push_back(factory_t{e});
+        }
+
+        return result;
     }
 
-    // Anonymous node
-    // CGRAPH_API Agnode_t *agnode(Agraph_t * g, char *name, int createflag);
-    node::node(graph& gr)
-        : node(gr, nullptr, true)
+    edge
+    node::join(node& other, const std::string& name)
     {
-    }
+        tmp_string s(name);
 
-    // CGRAPH_API Agnode_t *agidnode(Agraph_t * g, IDTYPE id, int createflag);
-    node::node(graph& gr, id_t id, bool create)
-        : impl_(std::make_unique<impl_t>(agidnode(get_ptr(gr), id, create)))
-    {
+        auto g = agraphof(shared_obj());
+        auto this_node = reinterpret_cast<Agnode_t*>(shared_obj());
+        auto other_node = reinterpret_cast<Agnode_t*>(other.shared_obj());
+        return edge(factory_t{agedge(g, this_node, other_node, s.str(), true)});
     }
-
-    // CGRAPH_API Agnode_t *agsubnode(Agraph_t * g, Agnode_t * n, int createflag)
-    node::node(graph& gr, node& subnode, bool create)
-    {
-    }
-
-    node::~node() = default;
-    */
 }

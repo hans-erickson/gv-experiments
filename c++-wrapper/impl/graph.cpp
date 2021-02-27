@@ -22,9 +22,12 @@
 //  SOFTWARE.
 //  
 #include "../graph.h"
+
+#include "../edge.h"
 #include "../node.h"
 
 #include "impl.h"
+#include "streambuf_iodisc.h"
 
 #include <cgraph.h>
 #include <cstring>
@@ -36,39 +39,7 @@
 
 namespace
 {
-    struct streambuf_disc_t
-    {
-        static std::streambuf&
-        sb(void* chan)
-        {
-            return *reinterpret_cast<std::streambuf*>(chan);
-        }
-
-        static int afread(void* chan,
-                          char* buf,
-                          int bufsize)
-        {
-            return sb(chan).sgetn(buf, bufsize);
-        }
-
-        static int flush(void* chan)
-        {
-            return sb(chan).pubsync();
-        }
-
-        static int putstr(void* chan,
-                          const char* str)
-        {
-            return sb(chan).sputn(str, std::strlen(str));
-        }
-    };
-
-    Agiodisc_t custom_iodisc
-    {
-        &streambuf_disc_t::afread,
-        &streambuf_disc_t::putstr,
-        &streambuf_disc_t::flush
-    };
+    gv::streambuf_iodisc_t custom_iodisc;
 
     Agdisc_t custom_disc
     {
@@ -76,149 +47,66 @@ namespace
         &AgIdDisc,
         &custom_iodisc
     };
-}
 
-/*
-
-typedef struct {Agmemdisc_t*mem;Agiddisc_t*id;Agiodisc_t*io;} Agdisc_t;
-
-Agmemdisc_t AgMemDisc;Agiddisc_t  AgIdDisc;Agiodisc_t  AgIoDisc;Agdisc_t    AgDefaultDisc
-
-typedef struct Agiodisc_s {int (*afread)(void*chan, char*buf, int bufsize);int (*putstr)(void*chan, char*str);int (*flush)(void*chan);} Agiodisc_t 
-*/
-
-namespace
-{
-    std::map<gv::graph::desc_t, Agdesc_t> desc_map =
+    Agraph_t*
+    agraph(const void* ptr)
     {
-        { gv::graph::desc_t::directed,          Agdirected         },
-        { gv::graph::desc_t::strict_directed,   Agstrictdirected   },
-        { gv::graph::desc_t::undirected,        Agundirected       },
-        { gv::graph::desc_t::strict_undirected, Agstrictundirected }
-    };
+        return const_cast<Agraph_t*>(reinterpret_cast<const Agraph_t*>(ptr));
+    }
 }
 
 namespace gv
 {
     struct graph::impl_t
     {
-        impl_t(Agraph_t* ag)
-            : agraph(ag)
+        static Agraph_t*
+        agopen(const char* name, desc_t desc)
         {
-            for (auto n = agfstnode(agraph); n != nullptr; n = agnxtnode(agraph,n))
+            const static std::map<gv::graph::desc_t, Agdesc_t> desc_map =
             {
-                add_node(n);
-            }
-        }
+                { gv::graph::desc_t::directed,          Agdirected         },
+                { gv::graph::desc_t::strict_directed,   Agstrictdirected   },
+                { gv::graph::desc_t::undirected,        Agundirected       },
+                { gv::graph::desc_t::strict_undirected, Agstrictundirected }
+            };
 
-        ~impl_t()
-        {
-            agclose(agraph);
-        }
-
-        node&
-        add_node(Agnode_t* n)
-        {
-            if (n == nullptr)
-            {
-                throw std::runtime_error("Invalid node");
-            }
-            node_map[n] = std::make_shared<node>(gv::node::factory_t{n});
-            return *node_map[n];
-        }
-
-        node&
-        create_node(const char* name)
-        {
             std::string s(name);
             s.push_back('\0');
-            // CGRAPH_API Agnode_t *agnode(Agraph_t * g, char *name, int createflag);
-            return add_node(agnode(agraph, s.data(), true));
+            return ::agopen(s.data(), desc_map.at(desc), nullptr);
         }
 
-        node&
-        create_node(id_t id)
+        static Agraph_t*
+        agread(std::istream& in)
         {
-            return add_node(agidnode(agraph, id, true));
+            return ::agread(in.rdbuf(), &custom_disc);
         }
 
-        node*
-        find_node(const char* name)
+        static Agraph_t*
+        agmemread(const std::string& str)
         {
-            std::string s(name);
-            s.push_back('\0');
-            // CGRAPH_API Agnode_t *agnode(Agraph_t * g, char *name, int createflag);
-            return node_map[agnode(agraph, s.data(), false)].get();
-            
-            // CGRAPH_API Agnode_t *agnode(Agraph_t * g, char *name, int createflag);
+            return ::agmemread(str.c_str());
         }
-
-        node*
-        find_node(id_t id)
-        {
-            return node_map[agidnode(agraph, id, false)].get();
-        }
-
-        bool
-        is_directed() const
-        {
-            return agisdirected(agraph);
-        }
-
-        bool
-        is_simple() const
-        {
-            return agissimple(agraph);
-        }
-
-        bool
-        is_strict() const
-        {
-            return agisstrict(agraph);
-        }
-
-        bool
-        is_undirected() const
-        {
-            return agisundirected(agraph);
-        }
-
-        std::vector<std::reference_wrapper<node>>
-        nodes() const
-        {
-            std::vector<std::reference_wrapper<node>> result;
-            for (auto n = agfstnode(agraph); n != nullptr; n = agnxtnode(agraph,n))
-            {
-                result.emplace_back(*node_map.at(n).get());
-            }
-            return result;
-        }
-
-        Agraph_t* agraph = nullptr;
-        std::map<Agnode_t*, std::shared_ptr<node>> node_map;
     };
+
+    graph::graph(const factory_t& f)
+        : object(f)
+    {
+    }
 
     graph::graph(const char* name,
                  desc_t desc)
+        : object(factory_t{impl_t::agopen(name, desc)})
     {
-        std::string s(name);
-        s.push_back('\0');
-        impl_ = std::make_unique<impl_t>(agopen(s.data(), desc_map[desc], nullptr));
-        // CGRAPH_API Agraph_t *agopen(char *name, Agdesc_t desc, Agdisc_t * disc);
     }
 
     graph::graph(std::istream& in)
-        : impl_(std::make_unique<impl_t>(agread(in.rdbuf(), &custom_disc)))
-    //: std::make_unique<impl_t>(name, desc, nullptr)
+        : object(factory_t{impl_t::agread(in)})
     {
-        // TODO: Use istream in custom discipline
-        // CGRAPH_API Agraph_t *agread(void *chan, Agdisc_t * disc);
     }
 
     graph::graph(const std::string& str)
-        : impl_(std::make_unique<impl_t>(agmemread(str.c_str())))
+        : object(factory_t{impl_t::agmemread(str)})
     {
-        // CGRAPH_API Agraph_t *agmemread(const char *cp);
     }
 
     graph::~graph() = default;
@@ -226,55 +114,84 @@ namespace gv
     bool
     graph::is_directed() const
     {
-        return impl_->is_directed();
+        return agisdirected(agraph(shared_obj()));
     }
 
     bool
     graph::is_simple() const
     {
-        return impl_->is_simple();
+        return agissimple(agraph(shared_obj()));
     }
 
     bool
     graph::is_strict() const
     {
-        return impl_->is_strict();
+        return agisstrict(agraph(shared_obj()));
     }
 
     bool
     graph::is_undirected() const
     {
-        return impl_->is_undirected();
+        return agisundirected(agraph(shared_obj()));
     }
 
-    node&
+    node
     graph::create_node(const char* name)
     {
-        return impl_->create_node(name);
+        std::string s(name);
+        s.push_back('\0');
+        return factory_t(agnode(agraph(shared_obj()), s.data(), true));
     }
 
-    node&
+    node
     graph::create_node(id_t id)
     {
-        return impl_->create_node(id);
+        return factory_t(agidnode(agraph(shared_obj()), id, true));
     }
 
-    node*
+    std::optional<node>
     graph::find_node(const char* name)
     {
-        return impl_->find_node(name);
+        std::optional<gv::node> result;
+
+        std::string s(name);
+        s.push_back('\0');
+
+        auto nptr = agnode(agraph(shared_obj()), s.data(), false);
+        if (nptr)
+        {
+            result = gv::node(gv::node::factory_t{nptr});
+        }
+
+        return result;
     }
 
-    node*
+    std::optional<node>
     graph::find_node(id_t id)
     {
-        return impl_->find_node(id);
+        std::optional<gv::node> result;
+
+        auto nptr = agidnode(agraph(shared_obj()), id, false);
+        if (nptr)
+        {
+            result = gv::node(gv::node::factory_t{nptr});
+        }
+
+        return result;
     }
 
-    std::vector<std::reference_wrapper<node>>
+    std::vector<node>
     graph::nodes() const
     {
-        return impl_->nodes();
+        std::vector<node> result;
+
+        for (auto n = agfstnode(agraph(shared_obj()));
+             n != nullptr; n = agnxtnode(agraph(shared_obj()),n))
+        {
+            result.emplace_back(node::factory_t(n));
+        }
+
+        return result;
     }
 }
 

@@ -25,15 +25,40 @@
 #if !defined(GV_NODE_H)
 #define GV_NODE_H
 
+#include "object.h"
+
+#include <functional>
+#include <list>
 #include <memory>
+
+// Assumptions:
+//   nodes are created by graphs
+//   edges are created by nodes
+//   a pointer to a node is stored in the implementation
+//   the implementation is derived from Agrec_t and created
+//     by agbindrec(), which will be associated with the Agnode_t
+//   nodes are removed by graphs
+//   edges are removed by nodes
+//   facade container classes are provided for node/edge iteration
+//
+// node order of creation:
+//   1. Agnode_t is created first (by graph)
+//   2. node is created (by graph)
+//   3. impl_t for node is created by node using agbindrec()
+//      The impl_t contains a pointer back to the node
+//   4. callbacks are registered for the node that will be called
+//      when edges are added or removed, or when the node itself
+//      is destroyed
+
 
 namespace gv
 {
+    class edge;
+
     class node final
+        : public object
     {
     public:
-        struct factory_t;
-
         node(const factory_t& f);
         /*
 ;        CGRAPH_API Agnode_t *agfstnode(Agraph_t * g);
@@ -44,12 +69,17 @@ namespace gv
 
         ~node();
 
-        std::string
-        name() const;
+        bool
+        operator==(const node& other) const;
 
-    private:
-        struct impl_t;
-        std::unique_ptr<impl_t> impl_;
+        std::vector<edge>
+        in_edges() const;
+
+        edge
+        join(node& other, const std::string& name);
+        
+        std::vector<edge>
+        out_edges() const;
     };
 }
 

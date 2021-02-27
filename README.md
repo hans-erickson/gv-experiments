@@ -1,2 +1,2 @@
-# gv-experiments
-Ill conceived experiments in graphviz
+# sf-experiments
+Useless sndfile experiments

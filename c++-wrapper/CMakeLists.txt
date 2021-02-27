@@ -13,9 +13,11 @@ include_directories(${Libgvc_INCLUDE_DIRS})
 
 set(COMMON_SRC
   impl/context.cpp
+  impl/edge.cpp
   impl/graph.cpp
   impl/layout.cpp
-  impl/node.cpp)
+  impl/node.cpp
+  impl/object.cpp)
 
 add_library(${PROJECT_NAME}
   ${COMMON_SRC})

@@ -10,8 +10,8 @@ pkg_check_modules(Libgvc REQUIRED IMPORTED_TARGET libgvc)
 include_directories(${Libgvc_INCLUDE_DIRS})
 
 set(COMMON_SRC
-    main.cpp
-    wrapper-test.cpp)
+  main.cpp
+  wrapper-test.cpp)
 
 add_executable(${PROJECT_NAME}
   ${COMMON_SRC})

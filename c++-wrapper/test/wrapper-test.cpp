@@ -22,6 +22,7 @@
 //  SOFTWARE.
 //  
 
+#include "../edge.h"
 #include "../graph.h"
 #include "../node.h"
 
@@ -32,6 +33,7 @@
 namespace
 {
     const char hello_dot[] = "digraph H { \"Hello world!\" }";
+    const char hello_goodbye_dot[] = "digraph H { \"Hello world!\" -> \"Goodbye!\" }";
 }
 
 TEST(WrapperTest, BasicTest)
@@ -70,16 +72,17 @@ TEST(WrapperTest, BasicTest)
 
     {
         gv::graph basic("basic", gv::graph::desc_t::directed);
-        gv::node& node0 = basic.create_node("node0");
-        gv::node* node0_ptr = basic.find_node("node0");
-        EXPECT_EQ(&node0, node0_ptr);
+        gv::node node0 = basic.create_node("node0");
+        std::optional<gv::node> node0_opt = basic.find_node("node0");
+        ASSERT_TRUE(node0_opt.has_value());
+        EXPECT_EQ(node0, *node0_opt);
         std::string name = node0.name();
         EXPECT_EQ(name, "node0");
-        gv::node* null_node = basic.find_node("non-existent");
-        EXPECT_EQ(null_node, nullptr);
+        std::optional<gv::node> null_node_opt = basic.find_node("non-existent");
+        EXPECT_FALSE(null_node_opt.has_value());
         auto nodes = basic.nodes();
         EXPECT_EQ(nodes.size(), 1);
-        EXPECT_EQ(nodes[0].get().name(), "node0");
+        EXPECT_EQ(nodes[0].name(), "node0");
     }
 }
 
@@ -93,7 +96,7 @@ TEST(WrapperTest, HelloTest)
         EXPECT_FALSE(hello.is_undirected());
         auto nodes = hello.nodes();
         EXPECT_EQ(nodes.size(), 1);
-        EXPECT_EQ(nodes[0].get().name(), "Hello world!");
+        EXPECT_EQ(nodes[0].name(), "Hello world!");
     }
 
     {
@@ -105,6 +108,57 @@ TEST(WrapperTest, HelloTest)
         EXPECT_FALSE(hello.is_undirected());
         auto nodes = hello.nodes();
         EXPECT_EQ(nodes.size(), 1);
-        EXPECT_EQ(nodes[0].get().name(), "Hello world!");
+        EXPECT_EQ(nodes[0].name(), "Hello world!");
+    }
+}
+
+TEST(WrapperTest, HelloGoodbyeTest)
+{
+    {
+        gv::graph hibye(hello_goodbye_dot);
+        EXPECT_TRUE(hibye.is_directed());
+        EXPECT_FALSE(hibye.is_strict());
+        EXPECT_FALSE(hibye.is_simple());
+        EXPECT_FALSE(hibye.is_undirected());
+        auto nodes = hibye.nodes();
+        EXPECT_EQ(nodes.size(), 2);
+        EXPECT_EQ(nodes[0].name(), "Hello world!");
+        EXPECT_EQ(nodes[1].name(), "Goodbye!");
+        auto in_edges0 = nodes[0].in_edges();
+        EXPECT_EQ(in_edges0.size(), 0);
+        auto out_edges0 = nodes[0].out_edges();
+        EXPECT_EQ(out_edges0.size(), 1);
+        auto in_edges1 = nodes[1].in_edges();
+        EXPECT_EQ(in_edges1.size(), 1);
+        auto out_edges1 = nodes[1].out_edges();
+        EXPECT_EQ(out_edges1.size(), 0);
+        
+    }
+}
+
+TEST(WrapperTest, CreateEdgeTest)
+{
+    {
+        gv::graph gr("gr", gv::graph::desc_t::directed);
+        gv::node node0 = gr.create_node("node0");
+        gv::node node1 = gr.create_node("node1");
+        auto in_edges0 = node0.in_edges();
+        EXPECT_EQ(in_edges0.size(), 0);
+        auto out_edges0 = node0.out_edges();
+        EXPECT_EQ(out_edges0.size(), 0);
+        auto in_edges1 = node1.in_edges();
+        EXPECT_EQ(in_edges1.size(), 0);
+        auto out_edges1 = node1.out_edges();
+        EXPECT_EQ(out_edges1.size(), 0);
+
+        gv::edge edge0 = node0.join(node1, "edge0");
+        in_edges0 = node0.in_edges();
+        EXPECT_EQ(in_edges0.size(), 0);
+        out_edges0 = node0.out_edges();
+        EXPECT_EQ(out_edges0.size(), 1);
+        in_edges1 = node1.in_edges();
+        EXPECT_EQ(in_edges1.size(), 1);
+        out_edges1 = node1.out_edges();
+        EXPECT_EQ(out_edges1.size(), 0);
     }
 }
