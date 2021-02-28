@@ -32,6 +32,7 @@
 namespace gv
 {
     class graph;
+    class layout;
 
     class context final
     {
@@ -48,16 +49,17 @@ namespace gv
         std::vector<std::string>
         info() const;
 
-        std::unique_ptr<graph>
+        graph
         nextInputGraph();
 
-        std::unique_ptr<graph>
+        graph
         pluginsGraph();
 
         std::string
         version() const;
 
     private:
+        template<typename> friend class impl_accessor_t;
         struct impl_t;
         std::unique_ptr<impl_t> impl_;
     };

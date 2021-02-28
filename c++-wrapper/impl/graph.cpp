@@ -32,7 +32,6 @@
 #include <cgraph.h>
 #include <cstring>
 #include <iostream>
-//#include <functional>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -47,12 +46,6 @@ namespace
         &AgIdDisc,
         &custom_iodisc
     };
-
-    Agraph_t*
-    agraph(const void* ptr)
-    {
-        return const_cast<Agraph_t*>(reinterpret_cast<const Agraph_t*>(ptr));
-    }
 }
 
 namespace gv
@@ -70,21 +63,14 @@ namespace gv
                 { gv::graph::desc_t::strict_undirected, Agstrictundirected }
             };
 
-            std::string s(name);
-            s.push_back('\0');
-            return ::agopen(s.data(), desc_map.at(desc), nullptr);
+            tmp_string s(name);
+            return ::agopen(s.str(), desc_map.at(desc), &custom_disc);
         }
 
         static Agraph_t*
-        agread(std::istream& in)
+        agread(const std::istream& in)
         {
             return ::agread(in.rdbuf(), &custom_disc);
-        }
-
-        static Agraph_t*
-        agmemread(const std::string& str)
-        {
-            return ::agmemread(str.c_str());
         }
     };
 
@@ -99,54 +85,49 @@ namespace gv
     {
     }
 
-    graph::graph(std::istream& in)
+    graph::graph(const std::istream& in)
         : object(factory_t{impl_t::agread(in)})
     {
     }
 
-    graph::graph(const std::string& str)
-        : object(factory_t{impl_t::agmemread(str)})
-    {
-    }
-
+    // TODO: We need to call agclose in most cases, probably. (Maybe in all cases?)
     graph::~graph() = default;
 
     bool
     graph::is_directed() const
     {
-        return agisdirected(agraph(shared_obj()));
+        return agisdirected(impl_accessor_t(*this));
     }
 
     bool
     graph::is_simple() const
     {
-        return agissimple(agraph(shared_obj()));
+        return agissimple(impl_accessor_t(*this));
     }
 
     bool
     graph::is_strict() const
     {
-        return agisstrict(agraph(shared_obj()));
+        return agisstrict(impl_accessor_t(*this));
     }
 
     bool
     graph::is_undirected() const
     {
-        return agisundirected(agraph(shared_obj()));
+        return agisundirected(impl_accessor_t(*this));
     }
 
     node
     graph::create_node(const char* name)
     {
-        std::string s(name);
-        s.push_back('\0');
-        return factory_t(agnode(agraph(shared_obj()), s.data(), true));
+        tmp_string s(name);
+        return factory_t(agnode(impl_accessor_t(*this), s.str(), true));
     }
 
     node
     graph::create_node(id_t id)
     {
-        return factory_t(agidnode(agraph(shared_obj()), id, true));
+        return factory_t(agidnode(impl_accessor_t(*this), id, true));
     }
 
     std::optional<node>
@@ -154,10 +135,9 @@ namespace gv
     {
         std::optional<gv::node> result;
 
-        std::string s(name);
-        s.push_back('\0');
+        tmp_string s(name);
 
-        auto nptr = agnode(agraph(shared_obj()), s.data(), false);
+        auto nptr = agnode(impl_accessor_t(*this), s.str(), false);
         if (nptr)
         {
             result = gv::node(gv::node::factory_t{nptr});
@@ -171,7 +151,7 @@ namespace gv
     {
         std::optional<gv::node> result;
 
-        auto nptr = agidnode(agraph(shared_obj()), id, false);
+        auto nptr = agidnode(impl_accessor_t(*this), id, false);
         if (nptr)
         {
             result = gv::node(gv::node::factory_t{nptr});
@@ -185,13 +165,19 @@ namespace gv
     {
         std::vector<node> result;
 
-        for (auto n = agfstnode(agraph(shared_obj()));
-             n != nullptr; n = agnxtnode(agraph(shared_obj()),n))
+        for (auto n = agfstnode(impl_accessor_t(*this));
+             n != nullptr; n = agnxtnode(impl_accessor_t(*this), n))
         {
             result.emplace_back(node::factory_t(n));
         }
 
         return result;
+    }
+
+    void
+    graph::write(std::ostream& out)
+    {
+        agwrite(impl_accessor_t(*this), out.rdbuf());
     }
 }
 

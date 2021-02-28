@@ -27,6 +27,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <utility>
 
 // Assumptions:
 //   objects are created by graphs
@@ -81,6 +83,12 @@ namespace gv
         CGRAPH_API Agobject_t *agprvobject(Agraph_t * g, Agobject_t * n);
         */
 
+        std::string
+        get(const std::string& key) const;
+        
+        std::vector<std::pair<std::string, std::string>>
+        get_attributes() const;
+
         graph
         graph_of() const;
 
@@ -93,6 +101,9 @@ namespace gv
         graph
         root() const;
 
+        void
+        set(const std::string& key, const std::string& value);
+
     protected:
         struct factory_t;
 
@@ -100,14 +111,9 @@ namespace gv
 
         ~object();
 
-        void*
-        shared_obj();
-
-        const void*
-        shared_obj() const;
-
     private:
-        void* obj_ = nullptr;
+        template<typename> friend class impl_accessor_t;
+        void* impl_ = nullptr;
     };
 }
 

@@ -76,7 +76,7 @@ namespace gv
         in_edges() const;
 
         edge
-        join(node& other, const std::string& name);
+        join(node& other, const char* name = nullptr);
         
         std::vector<edge>
         out_edges() const;

@@ -41,7 +41,7 @@ namespace gv
     bool
     node::operator==(const node& other) const
     {
-        return (shared_obj() == other.shared_obj());
+        return (impl_accessor_t(*this) == impl_accessor_t(other));
     }
 
     std::vector<edge>
@@ -49,9 +49,9 @@ namespace gv
     {
         std::vector<edge> result;
 
-        auto g = agraphof(const_cast<void*>(shared_obj()));
-        auto this_node = reinterpret_cast<Agnode_t*>(const_cast<void*>(shared_obj()));
-        
+        auto this_node = impl_accessor_t(*this);
+        auto g = agraphof(this_node);
+
         for (auto e = agfstin(g, this_node); e != nullptr; e = agnxtin(g, e))
         {
             result.push_back(factory_t{e});
@@ -65,8 +65,8 @@ namespace gv
     {
         std::vector<edge> result;
 
-        auto g = agraphof(const_cast<void*>(shared_obj()));
-        auto this_node = reinterpret_cast<Agnode_t*>(const_cast<void*>(shared_obj()));
+        auto this_node = impl_accessor_t(*this);
+        auto g = agraphof(this_node);
         
         for (auto e = agfstout(g, this_node); e != nullptr; e = agnxtout(g, e))
         {
@@ -77,13 +77,13 @@ namespace gv
     }
 
     edge
-    node::join(node& other, const std::string& name)
+    node::join(node& other, const char* name)
     {
         tmp_string s(name);
 
-        auto g = agraphof(shared_obj());
-        auto this_node = reinterpret_cast<Agnode_t*>(shared_obj());
-        auto other_node = reinterpret_cast<Agnode_t*>(other.shared_obj());
+        auto this_node = impl_accessor_t(*this);
+        auto other_node = impl_accessor_t(other);
+        auto g = agraphof(this_node);
         return edge(factory_t{agedge(g, this_node, other_node, s.str(), true)});
     }
 }

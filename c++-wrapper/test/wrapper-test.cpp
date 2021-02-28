@@ -89,19 +89,7 @@ TEST(WrapperTest, BasicTest)
 TEST(WrapperTest, HelloTest)
 {
     {
-        gv::graph hello(hello_dot);
-        EXPECT_TRUE(hello.is_directed());
-        EXPECT_FALSE(hello.is_strict());
-        EXPECT_FALSE(hello.is_simple());
-        EXPECT_FALSE(hello.is_undirected());
-        auto nodes = hello.nodes();
-        EXPECT_EQ(nodes.size(), 1);
-        EXPECT_EQ(nodes[0].name(), "Hello world!");
-    }
-
-    {
-        std::stringstream ss(hello_dot);
-        gv::graph hello(ss);
+        gv::graph hello{std::stringstream(hello_dot)};
         EXPECT_TRUE(hello.is_directed());
         EXPECT_FALSE(hello.is_strict());
         EXPECT_FALSE(hello.is_simple());
@@ -115,7 +103,7 @@ TEST(WrapperTest, HelloTest)
 TEST(WrapperTest, HelloGoodbyeTest)
 {
     {
-        gv::graph hibye(hello_goodbye_dot);
+        gv::graph hibye{std::stringstream(hello_goodbye_dot)};
         EXPECT_TRUE(hibye.is_directed());
         EXPECT_FALSE(hibye.is_strict());
         EXPECT_FALSE(hibye.is_simple());
@@ -132,7 +120,6 @@ TEST(WrapperTest, HelloGoodbyeTest)
         EXPECT_EQ(in_edges1.size(), 1);
         auto out_edges1 = nodes[1].out_edges();
         EXPECT_EQ(out_edges1.size(), 0);
-        
     }
 }
 
@@ -153,12 +140,28 @@ TEST(WrapperTest, CreateEdgeTest)
 
         gv::edge edge0 = node0.join(node1, "edge0");
         in_edges0 = node0.in_edges();
-        EXPECT_EQ(in_edges0.size(), 0);
+        EXPECT_EQ(in_edges0.size(), 0); //
         out_edges0 = node0.out_edges();
         EXPECT_EQ(out_edges0.size(), 1);
         in_edges1 = node1.in_edges();
-        EXPECT_EQ(in_edges1.size(), 1);
+        EXPECT_EQ(in_edges1.size(), 1); //
         out_edges1 = node1.out_edges();
+        EXPECT_EQ(out_edges1.size(), 0);
+    }
+
+    {
+        // Anonymous nodes/edges
+        gv::graph gr("gr", gv::graph::desc_t::directed);
+        gv::node node0 = gr.create_node();
+        gv::node node1 = gr.create_node();
+        gv::edge edge0 = node0.join(node1);
+        auto in_edges0 = node0.in_edges();
+        EXPECT_EQ(in_edges0.size(), 0);
+        auto out_edges0 = node0.out_edges();
+        EXPECT_EQ(out_edges0.size(), 1);
+        auto in_edges1 = node1.in_edges();
+        EXPECT_EQ(in_edges1.size(), 1); //
+        auto out_edges1 = node1.out_edges();
         EXPECT_EQ(out_edges1.size(), 0);
     }
 }

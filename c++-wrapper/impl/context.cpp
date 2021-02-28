@@ -22,86 +22,44 @@
 //  SOFTWARE.
 //  
 
-#include "impl_old.h"
+#include "../context.h"
+
+#include "impl.h"
+
+#include <gvc.h>
 
 #include <functional>
 
+namespace
+{
+    struct factory_helper_t
+        : public gv::object
+    {
+        static object::factory_t
+        nextInputGraph(GVC_t* gvc)
+        {
+            return object::factory_t { gvNextInputGraph(gvc) };
+        }
+
+        static object::factory_t
+        pluginsGraph(GVC_t* gvc)
+        {
+            return object::factory_t { gvPluginsGraph(gvc) };
+        }
+    };
+}
+
 namespace gv
 {
-    struct context::impl_t
-    {
-        impl_t()
-            : gvc(std::shared_ptr<GVC_t>(gvContext(), gvFreeContext))
-        {
-        }
-
-        impl_t(int argc, char* argv[])
-            : impl_t()
-        {
-            gvParseArgs(gvc.get(), argc, argv);
-        }
-        
-        ~impl_t()
-        {
-        }
-
-        std::string
-        buildDate() const
-        {
-            return gvcBuildDate(gvc.get());
-        }
-
-        std::vector<std::string>
-        info() const
-        {
-            std::vector<std::string> result(3);
-            char** info = gvcInfo(gvc.get());
-            for (std::size_t i = 0; i < result.size(); ++i)
-            {
-                result[i] = info[i];
-            }
-            return result;
-        }
-
-        std::unique_ptr<graph>
-        nextInputGraph()
-        {
-            /*
-            std::shared_ptr<graph_t> g(gvNextInputGraph(gvc.get()),
-                                       [](graph_t*){});
-            return std::make_unique<graph>(graph::factory_arg_t(gvc, g));
-            */
-            throw "TODO:";
-        }
-
-        std::unique_ptr<graph>
-        pluginsGraph()
-        {
-            /*
-            std::shared_ptr<graph_t> g(gvPluginsGraph(gvc.get()),
-                                       [](graph_t*){});
-            return std::make_unique<graph>(graph::factory_arg_t(gvc, g));
-            */
-            throw "TODO:";
-        }
-
-        std::string
-        version() const
-        {
-            return gvcVersion(gvc.get());
-        }
-
-        std::shared_ptr<GVC_t> gvc;
-    };
-
     context::context()
         : impl_(std::make_unique<impl_t>())
     {
     }
 
     context::context(int argc, char* argv[])
-        : impl_(std::make_unique<impl_t>(argc, argv))
+        : impl_(std::make_unique<impl_t>())
     {
+        gvParseArgs(impl_->gvc, argc, argv);
     }
 
     context::~context() = default;
@@ -109,31 +67,37 @@ namespace gv
     std::string
     context::buildDate() const
     {
-        return impl_->buildDate();
+        return gvcBuildDate(impl_->gvc);
     }
 
     std::vector<std::string>
     context::info() const
     {
-        return impl_->info();
+        std::vector<std::string> result(3);
+        char** info = gvcInfo(impl_->gvc);
+        for (std::size_t i = 0; i < result.size(); ++i)
+        {
+            result[i] = info[i];
+        }
+        return result;
     }
 
-    std::unique_ptr<graph>
+    graph
     context::nextInputGraph()
     {
-        return impl_->nextInputGraph();
+        return factory_helper_t::nextInputGraph(impl_->gvc);
     }
 
-    std::unique_ptr<graph>
+    graph
     context::pluginsGraph()
     {
-        return impl_->pluginsGraph();
+        return factory_helper_t::pluginsGraph(impl_->gvc);
     }
 
     std::string
     context::version() const
     {
-        return impl_->version();
+        return gvcVersion(impl_->gvc);
     }
 }
 

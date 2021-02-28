@@ -114,17 +114,45 @@ namespace gv
     struct object::impl_t : factory_t {};
     */
 
+    std::string
+    object::get(const std::string& key) const
+    {
+        tmp_string s(key);
+        auto result = agget(impl_, s.str());
+        return (result? result: "");
+    }
+
+    std::vector<std::pair<std::string, std::string>>
+    object::get_attributes() const
+    {
+        std::vector<std::pair<std::string, std::string>> result;
+        
+        int kind = agobjkind(impl_);
+        Agraph_t* g = agraphof(impl_);
+
+        //CGRAPH_API Agsym_t *agnxtattr(Agraph_t * g, int kind, Agsym_t * attr);
+
+        for (Agsym_t* sym = nullptr; sym = agnxtattr(g, kind, sym); )
+        {
+            result.emplace_back(std::pair(sym->name, sym->defval));
+            //printf("%s = %s\n",sym->name,sym->defval);
+        }
+        //sym = 0;    /*to get the first one*/while (sym = agnxtattr(g,AGNODE,sym)
+
+        return result;
+    }
+
     graph
     object::graph_of() const
     {
-        return graph(factory_t{agraphof(obj_)});
-        //return convert_agraph(agraphof(obj_));
+        return graph(factory_t{agraphof(impl_)});
+        //return convert_agraph(agraphof(impl_));
     }
 
     object::kind_t
     object::kind() const
     {
-        switch (agobjkind(obj_))
+        switch (agobjkind(impl_))
         {
             case AGRAPH:
             {
@@ -147,33 +175,31 @@ namespace gv
     std::string
     object::name() const
     {
-        return agnameof(obj_);
+        const char* s = agnameof(impl_);
+        return (s? s: "");
     }
 
     graph
     object::root() const
     {
-        //return convert_agraph(agroot(obj_));
+        return factory_t{agroot(impl_)};
+    }
+
+    void
+    object::set(const std::string& key, const std::string& value)
+    {
+        tmp_string ks(key);
+        tmp_string vs(value);
+        // TODO: Return value?
+        agset(impl_, ks.str(), vs.str());
     }
 
     object::object(const factory_t& f)
-        : obj_(f.ptr)
+        : impl_(f.ptr)
     {
     }
 
     object::~object()
     {
-    }
-
-    void*
-    object::shared_obj()
-    {
-        return obj_;
-    }
-
-    const void*
-    object::shared_obj() const
-    {
-        return obj_;
     }
 }

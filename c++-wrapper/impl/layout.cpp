@@ -22,12 +22,22 @@
 //  SOFTWARE.
 //  
 
-#include "impl_old.h"
+#include "impl.h"
+
+#include <ostream>
 
 namespace gv
 {
     struct layout::impl_t
     {
+        impl_t(const context& ctx, const graph& gobj)
+        {
+            //            gvc = ctx.impl_->gvc;
+            gvc = impl_accessor_t(ctx);
+            g = impl_accessor_t(gobj);
+        }
+
+        /*
         impl_t(std::shared_ptr<GVC_t> gvc_,
                std::shared_ptr<graph_t> g_,
                const char* engine_)
@@ -77,10 +87,13 @@ namespace gv
         std::shared_ptr<GVC_t> gvc;
         std::shared_ptr<graph_t> g;
         const char* engine = nullptr;
+        */
+        GVC_t* gvc = nullptr;
+        Agraph_t* g = nullptr;
     };
 
-    layout::layout(const factory_arg_t& args)
-        : impl_(std::make_unique<impl_t>(args.gvc, args.g, args.engine))
+    layout::layout(const context& ctx, const graph& g)
+        : impl_(std::make_unique<impl_t>(ctx, g))
     {
     }
 
@@ -88,12 +101,27 @@ namespace gv
     {
     }
 
+    std::string
+    layout::render(const std::string& format)
+    {
+        std::string result;
+
+        char* data = nullptr;
+        unsigned length = 0;
+        gvRenderData(impl_->gvc, impl_->g, format.c_str(), &data, &length);
+
+        return result;
+    }
+
+    /*
     int
     layout::render()
     {
         return impl_->render();
     }
+    */
 
+    /*
     int
     layout::render(const char* format, FILE* out)
     {
@@ -111,6 +139,7 @@ namespace gv
     {
         return impl_->render(format, result, length);
     }
+    */
     
         // Compute a layout using a specified engine
         //int

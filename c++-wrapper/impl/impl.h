@@ -33,156 +33,13 @@
 #include "../object.h"
 
 #include <cgraph.h>
+#include <gvc.h>
 
-#include <functional>
-#include <iostream> // TODO: Remove
+#include <optional>
 #include <string>
 
 namespace
 {
-    template<typename T>
-    class record
-    {
-    public:
-        record(T& t, void* g)
-        {
-            auto str = object_name(agobjkind(g));
-            auto obj = reinterpret_cast<impl_t*>(agbindrec(g, str.data(),
-                                                           sizeof(impl_t), FALSE));
-            impl_ = std::unique_ptr<impl_t>(obj);
-            impl_->obj = &t;
-            impl_->g = g;
-            /*
-            impl_ = std::unique_ptr<impl_t, deleter_t>(obj, deleter);
-
-            impl_->obj = &t;
-            */
-        }
-
-        ~record()
-        {
-            auto str = object_name(agobjkind(impl_->g));
-            agdelrec(impl_->g, str.data());
-            std::cout << "destructor" << std::endl;
-        }
-
-    private:
-        static void
-        deleter(void* g)
-        {
-            auto str = object_name(agobjkind(g));
-            agdelrec(g, str.data());
-            std::cout << "deleter()" << std::endl;
-        }
-
-        static std::string
-        object_name(int type)
-        {
-            using namespace std::string_literals;
-
-            switch (type)
-            {
-                case AGRAPH:
-                {
-                    return "gv::graph\0"s;
-                }
-                case AGNODE:
-                {
-                    return "gv::node\0"s;
-                }
-                case AGOUTEDGE:
-                case AGINEDGE:
-                {
-                    return "gv::edge\0"s;
-                }
-            }
-            return "unknown\0"s;
-        }
-
-        struct impl_t
-        {
-            Agrec_t rec;
-            T* obj = nullptr;
-            void* g = nullptr;
-        };
-
-        //using deleter_t = std::function<void(void*)>;
-        std::unique_ptr<impl_t> impl_;
-    };
-
-    
-
-        /*
-        static void*
-        operator new(std::size_t sz, void* obj)
-        {
-            std::cout << "operator new" << std::endl;
-            auto s = object_name(agobjkind(obj));
-            return agbindrec(obj, s.data(), sz, FALSE);
-        }
-
-        static void
-        operator delete(void* obj)
-        {
-            std::cout << "operator delete" << std::endl;
-            auto s = object_name(agobjkind(obj));
-            agdelrec(obj, s.data());
-        }
-        */
-
-
-        /*
-        record*
-        create(void* object)
-        {
-            Agnode_t* n = agnode(g,"mynodename",TRUE);
-            record* data = (record*)agbindrec(n,"mynode_t",sizeof(mynode_t),FALSE);
-            data->count = 1;
-
-        }
-        */
-
-        /*
-        static void* operator new(std::size_t sz)
-        {
-            mynode_t*data;
-            Agnode_t*n;
-            n = agnode(g,"mynodename",TRUE);
-            record* data = (record*)agbindrec(n,"mynode_t",sizeof(mynode_t),FALSE);
-            data->count = 1;
-
-
-            std::cout << "custom new for size " << sz << '\n';
-            return ::operator new(sz);
-        }
-        */
-        //static void operator delete(void* ptr);
-        
-
-    /*
-    struct bogus_wrapper
-    {
-        Agrec_t record;
-        gv::graph* g = nullptr;
-    };
-    */
-    
-    // TODO: Move this somewhere.
-    /*
-    inline gv::graph&
-    convert_agraph(Agraph_t* g)
-    {
-        using namespace std::string_literals;
-
-        auto str = "cv::graph\0"s;
-        auto gwrapper = reinterpret_cast<bogus_wrapper*>(aggetrec(g, str.data(), FALSE));
-        if (gwrapper != nullptr && gwrapper->g != nullptr)
-        {
-            return *gwrapper->g;
-        }
-        // TODO: Get gv::graph from rec
-    }
-    */
 }
 
 namespace
@@ -193,22 +50,26 @@ namespace
         tmp_string(const std::string& s)
             : s_(s)
         {
-            s_.push_back('\0');
+            s_->push_back('\0');
+        }
+
+        tmp_string(const char* str)
+        {
+            if (str)
+            {
+                s_ = str;
+                s_->push_back('\0');
+            }
         }
 
         char*
         str()
         {
-            return s_.data();
-        }
-
-        operator char*()
-        {
-            return s_.data();
+            return (s_.has_value()? s_->data(): nullptr);
         }
 
     private:
-        std::string s_;
+        std::optional<std::string> s_;
     };
 }
 
@@ -218,27 +79,81 @@ namespace gv
     {
         void* ptr = nullptr;
     };
-    /*
-    struct node::factory_t
+
+    struct context::impl_t
     {
-        Agnode_t* ptr = nullptr;
+        impl_t() : gvc(gvContext()) {}
+
+        ~impl_t() { gvFreeContext(gvc); }
+	
+        GVC_t* gvc = nullptr;
     };
 
-    struct edge::factory_t
-    {
-        Agedge_t* ptr = nullptr;
-    };
-    */
+    template<typename ObjectTraits>
+    struct impl_traits_t;
 
-    struct common_impl_t
+    template<>
+    struct impl_traits_t<graph>
     {
-        Agraph_t* agraph = nullptr;
-        /*get_agraph_ptr(graph& g)
+        using pointer_t = Agraph_t*;
+    };
+
+    template<>
+    struct impl_traits_t<edge>
+    {
+        using pointer_t = Agedge_t*;
+    };
+
+    template<>
+    struct impl_traits_t<node>
+    {
+        using pointer_t = Agnode_t*;
+    };
+
+    template<typename ObjectT>
+    struct impl_accessor_t
+    {
+        using pointer_t = typename impl_traits_t<ObjectT>::pointer_t;
+        
+        impl_accessor_t(ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_))
         {
-            // TODO: Do some magic here
-            return nullptr;
         }
-        */
+
+        impl_accessor_t(const ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_))
+        {
+        }
+
+        operator pointer_t() const
+        {
+            return obj;
+        }
+
+        pointer_t obj = nullptr;
+    };
+
+    template<>
+    struct impl_accessor_t<context>
+    {
+        using pointer_t = GVC_t*;
+        
+        impl_accessor_t(context& o)
+            : obj(o.impl_->gvc)
+        {
+        }
+
+        impl_accessor_t(const context& o)
+            : obj(o.impl_->gvc)
+        {
+        }
+
+        operator pointer_t() const
+        {
+            return obj;
+        }
+
+        pointer_t obj = nullptr;
     };
 }
 

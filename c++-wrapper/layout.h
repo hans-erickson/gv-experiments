@@ -25,22 +25,34 @@
 #if !defined(GV_LAYOUT_H)
 #define GV_LAYOUT_H
 
+//#include <iosfwd>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace gv
 {
+    class context;
+    class graph;
+
     class layout final
     {
     public:
-        struct factory_arg_t;
+        layout(const context& ctx, const graph& g, const std::string& engine);
 
-        layout(const factory_arg_t& args);
+        layout(const context& ctx, const graph& g);
 
         ~layout();
 
-        int
-        render();
+        std::string
+        render(const std::string& format);
 
+        /*
+        int
+        render(std::ostream& out);
+        */
+
+        /*
         int
         render(const char* format, FILE* out);
 
@@ -49,6 +61,7 @@ namespace gv
 
         int
         render(const char* format, char** result, unsigned int* length);
+        */
         // Compute a layout using a specified engine
         //int
         //layout(context& ctx, const char *engine);

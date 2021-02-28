@@ -55,9 +55,7 @@ namespace gv
 
         graph(const char* name, desc_t desc);
 
-        graph(std::istream& in);
-
-        graph(const std::string& str);
+        graph(const std::istream& in);
 
         ~graph();
 
@@ -95,6 +93,9 @@ namespace gv
 
         std::vector<node>
         nodes() const;
+
+        void
+        write(std::ostream& out);
 
     private:
         struct impl_t;
