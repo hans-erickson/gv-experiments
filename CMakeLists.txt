@@ -3,7 +3,7 @@ project(gvexp)
 
 add_subdirectory(c++-wrapper)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 find_package(PkgConfig REQUIRED)
 

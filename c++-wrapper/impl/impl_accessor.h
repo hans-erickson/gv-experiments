@@ -22,65 +22,20 @@
 //  SOFTWARE.
 //  
 
-#if !defined(GV_IMPL_H)
-#define GV_IMPL_H
+#if !defined(GV_IMPL_ACCESSOR_H)
+#define GV_IMPL_ACCESSOR_H
 
-#include "../context.h"
-#include "../edge.h"
-#include "../graph.h"
-#include "../layout.h"
-#include "../node.h"
-#include "../object.h"
-
-#include <cgraph.h>
-#include <gvc.h>
-
-#include <optional>
-#include <string>
-
-namespace
-{
-}
-
-namespace
-{
-    class tmp_string
-    {
-    public:
-        tmp_string(const std::string& s)
-            : s_(s)
-        {
-            s_->push_back('\0');
-        }
-
-        tmp_string(const char* str)
-        {
-            if (str)
-            {
-                s_ = str;
-                s_->push_back('\0');
-            }
-        }
-
-        char*
-        str()
-        {
-            return (s_.has_value()? s_->data(): nullptr);
-        }
-
-    private:
-        std::optional<std::string> s_;
-    };
-}
 
 namespace gv
 {
+    /*
     struct object::factory_t
     {
         void* ptr = nullptr;
     };
+    */
 
-    struct context::impl_t
+    /*struct context::impl_t
     {
         impl_t() : gvc(gvContext()) {}
 
@@ -88,43 +43,39 @@ namespace gv
 	
         GVC_t* gvc = nullptr;
     };
+    */
 
     template<typename ObjectTraits>
-    struct impl_traits_t;
+    struct impl_traits;
 
-    template<>
-    struct impl_traits_t<graph>
+    template<typename ObjectT> requires std::derived_from<ObjectT, object>
+    auto native_handle_cast(const ObjectT& o)
     {
-        using pointer_t = Agraph_t*;
-    };
+        using pointer_t = typename impl_traits<ObjectT>::pointer_t;
+        return o.impl_->obj;
+    }
 
-    template<>
-    struct impl_traits_t<edge>
+    /*
+    template<typename ObjectT> requires std::derived_from<ObjectT, object>
+    struct object::native_handle
     {
-        using pointer_t = Agedge_t*;
-    };
-
-    template<>
-    struct impl_traits_t<node>
-    {
-        using pointer_t = Agnode_t*;
-    };
-
-    template<typename ObjectT>
-    struct impl_accessor_t
-    {
-        using pointer_t = typename impl_traits_t<ObjectT>::pointer_t;
+        using pointer_t = typename impl_traits<ObjectT>::pointer_t;
         
-        impl_accessor_t(ObjectT& o)
-            : obj(reinterpret_cast<pointer_t>(o.impl_))
+        native_handle(ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_->obj))
         {
         }
 
-        impl_accessor_t(const ObjectT& o)
-            : obj(reinterpret_cast<pointer_t>(o.impl_))
+        native_handle(const ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_->obj))
         {
         }
 
+        native_handle(pointer_t ptr)
+            : obj(ptr)
+        {
+        }
+        
         operator pointer_t() const
         {
             return obj;
@@ -132,7 +83,9 @@ namespace gv
 
         pointer_t obj = nullptr;
     };
+    */
 
+    /*
     template<>
     struct impl_accessor_t<context>
     {
@@ -155,6 +108,7 @@ namespace gv
 
         pointer_t obj = nullptr;
     };
+    */
 }
 
-#endif // GV_IMPL_H
+#endif // GV_IMPL_ACCESSOR_H

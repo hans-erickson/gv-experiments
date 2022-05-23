@@ -49,6 +49,8 @@
 //      when edges are added or removed, or when the object itself
 //      is destroyed
 
+//#include <iterator>
+#include <ranges>
 
 namespace gv
 {
@@ -105,15 +107,108 @@ namespace gv
         set(const std::string& key, const std::string& value);
 
     protected:
-        struct factory_t;
+        template<typename T>
+        class forward_iterator
+        {
+        public:
+            using difference_type = std::ptrdiff_t;
+            using value_type = T;
 
-        object(const factory_t& f);
+            struct constructor_arg_t;
+
+            forward_iterator(const constructor_arg_t& arg);
+            forward_iterator() = default;
+            forward_iterator(const forward_iterator& i) = default;
+            forward_iterator& operator++();
+            forward_iterator operator++(int);
+            T& operator*();
+            T& operator*() const;
+            bool operator==(const forward_iterator& other) const;
+
+        private:
+            struct impl_t;
+            std::shared_ptr<impl_t> impl_;
+        };
+
+        template<typename T>
+        class bidirectional_iterator
+        {
+        public:
+            using difference_type = std::ptrdiff_t;
+            using value_type = T;
+
+            struct constructor_arg_t;
+
+            bidirectional_iterator();
+            bidirectional_iterator(const constructor_arg_t& arg);
+            bidirectional_iterator(const bidirectional_iterator& i);
+            bidirectional_iterator& operator++();
+            bidirectional_iterator& operator--();
+            bidirectional_iterator operator++(int);
+            bidirectional_iterator operator--(int);
+            T& operator*();
+            T& operator*() const;
+            bool operator==(const bidirectional_iterator& other) const;
+
+        private:
+            struct impl_t;
+            std::shared_ptr<impl_t> impl_;
+        };
+
+        template<typename Iterator>
+        requires (std::forward_iterator<Iterator> || std::bidirectional_iterator<Iterator>)
+        class view
+            : public std::ranges::view_interface<view<Iterator>>
+        {
+        public:
+            view(Iterator i)
+                : i_(i)
+            {
+            }
+
+            Iterator
+            begin() const
+            {
+                return i_;
+            }
+
+            std::nullptr_t
+            end() const
+            {
+                return nullptr;
+            }
+
+        private:
+            Iterator i_;
+        };
+
+        struct constructor_arg_t;
+
+        object(const constructor_arg_t& arg);
 
         ~object();
 
+        template<typename T> requires std::derived_from<T, object>
+        struct native_pointer_traits;
+
+        template<typename T> requires std::derived_from<T, object>
+        static auto
+        get_native_ptr(T* ptr)
+        {
+            using pointer_type = typename native_pointer_traits<T>::pointer_type;
+            return reinterpret_cast<pointer_type>(ptr->impl_.get());
+        }
+
+        template<typename T> requires std::derived_from<T, object>
+        static auto
+        get_native_ptr(const T* t)
+        {
+            return get_native_ptr(const_cast<T*>(t));
+        }
+        
     private:
-        template<typename> friend class impl_accessor_t;
-        void* impl_ = nullptr;
+        struct impl_t;
+        std::shared_ptr<impl_t> impl_;
     };
 }
 

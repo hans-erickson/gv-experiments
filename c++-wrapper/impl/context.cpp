@@ -24,7 +24,7 @@
 
 #include "../context.h"
 
-#include "impl.h"
+//#include "impl.h"
 
 #include <gvc.h>
 
@@ -35,6 +35,7 @@ namespace
     struct factory_helper_t
         : public gv::object
     {
+        /*
         static object::factory_t
         nextInputGraph(GVC_t* gvc)
         {
@@ -46,6 +47,7 @@ namespace
         {
             return object::factory_t { gvPluginsGraph(gvc) };
         }
+        */
     };
 }
 
@@ -85,13 +87,15 @@ namespace gv
     graph
     context::nextInputGraph()
     {
-        return factory_helper_t::nextInputGraph(impl_->gvc);
+        throw std::runtime_error("TODO:");
+        //return factory_helper_t::nextInputGraph(impl_->gvc);
     }
 
     graph
     context::pluginsGraph()
     {
-        return factory_helper_t::pluginsGraph(impl_->gvc);
+        throw std::runtime_error("TODO:");
+        //return factory_helper_t::pluginsGraph(impl_->gvc);
     }
 
     std::string

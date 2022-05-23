@@ -22,8 +22,7 @@
 //  SOFTWARE.
 //  
 
-#include "impl.h"
-
+#include "object_impl.h"
 
 #include <cgraph.h>
 
@@ -80,10 +79,19 @@
 //
 
 
-
+#include "object_impl.h"
 
 namespace gv
 {
+    /*
+    template<>
+    object::native_pointer_traits<object>::pointer_type
+    object::get_native_ptr<object>(object* ptr)
+    {
+        return ptr->impl_.get();
+    }
+    */
+
         /*
         CGRAPH_API Agraph_t *agraphof(void* obj);
         CGRAPH_API Agraph_t *agroot(void* obj);
@@ -114,6 +122,7 @@ namespace gv
     struct object::impl_t : factory_t {};
     */
 
+    /*
     std::string
     object::get(const std::string& key) const
     {
@@ -137,7 +146,7 @@ namespace gv
             result.emplace_back(std::pair(sym->name, sym->defval));
             //printf("%s = %s\n",sym->name,sym->defval);
         }
-        //sym = 0;    /*to get the first one*/while (sym = agnxtattr(g,AGNODE,sym)
+        //sym = 0;    //to get the first one   while (sym = agnxtattr(g,AGNODE,sym)
 
         return result;
     }
@@ -171,14 +180,16 @@ namespace gv
         }
         throw std::logic_error("Invalid object kind. (Internal error.)");
     }
+    */
 
     std::string
     object::name() const
     {
-        const char* s = agnameof(impl_);
+        const char* s = ::agnameof(get_native_ptr(this));
         return (s? s: "");
     }
 
+    /*
     graph
     object::root() const
     {
@@ -193,9 +204,10 @@ namespace gv
         // TODO: Return value?
         agset(impl_, ks.str(), vs.str());
     }
+    */
 
-    object::object(const factory_t& f)
-        : impl_(f.ptr)
+    object::object(const constructor_arg_t& arg)
+        : impl_{arg.ptr_}
     {
     }
 

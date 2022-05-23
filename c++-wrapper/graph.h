@@ -32,6 +32,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <vector>
 
 namespace gv
@@ -39,10 +40,32 @@ namespace gv
     class edge;
     class node;
 
-    class graph final
+
+    class graph
         : public object
     {
     public:
+
+        using node_iterator = bidirectional_iterator<node>;
+        using edge_iterator = forward_iterator<edge>;
+        using node_view     = view<node_iterator>;
+        using edge_view     = view<edge_iterator>;
+
+        static_assert(std::bidirectional_iterator<node_iterator>);
+        static_assert(std::forward_iterator<edge_iterator>);
+
+
+        //Agraph_t
+        //*agread(void *channel, Agdisc_t *);
+
+        //void
+        //agreadline(int line_no);
+
+        //void
+        //agsetfile(char *file_name);
+
+
+        
         enum class desc_t
         {
             directed,
@@ -51,13 +74,17 @@ namespace gv
             strict_undirected
         };
 
-        graph(const factory_t& f);
+        graph(const object::constructor_arg_t& arg);
 
-        graph(const char* name, desc_t desc);
+        // Equivalent of agopen 
+        graph(const char* name, desc_t kind);
 
         graph(const std::istream& in);
 
         ~graph();
+
+        //Agraph_t
+        //*agconcat(Agraph_t *g, void *channel, Agdisc_t *disc);
 
         node
         create_node(const char* name = nullptr);
@@ -65,7 +92,7 @@ namespace gv
         node
         create_node(id_t id);
 
-        std::vector<std::reference_wrapper<edge>>
+        edge_view
         edges() const;
 
         std::optional<node>
@@ -91,7 +118,7 @@ namespace gv
         bool
         is_undirected() const;
 
-        std::vector<node>
+        node_view
         nodes() const;
 
         void

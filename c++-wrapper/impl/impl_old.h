@@ -22,50 +22,91 @@
 //  SOFTWARE.
 //  
 
-#if !defined(GV_IMPL_OLD_H)
-#define GV_IMPL_OLD_H
+#if !defined(GV_IMPL_H)
+#define GV_IMPL_H
 
-#include "../context.h"
-#include "../graph.h"
-#include "../layout.h"
-
-#include <gvc.h>
 
 namespace gv
 {
-    struct factory_arg_t
-    {
-        factory_arg_t(std::shared_ptr<GVC_t> gvc_,
-                      std::shared_ptr<graph_t> g_)
-            : gvc(gvc_),
-              g(g_)
-        {
-        }
-
-        std::shared_ptr<GVC_t> gvc;
-        std::shared_ptr<graph_t> g;
-    };
-
     /*
-    struct graph::factory_arg_t
-        : gv::factory_arg_t
+    struct object::factory_t
     {
-        using gv::factory_arg_t::factory_arg_t;
+        void* ptr = nullptr;
     };
     */
 
-    struct layout::factory_arg_t
-        : gv::factory_arg_t
+    /*struct context::impl_t
     {
-        factory_arg_t(std::shared_ptr<GVC_t> gvc_,
-                      std::shared_ptr<graph_t> g_,
-                      const char* engine_)
-            : gv::factory_arg_t(gvc_, g_)
+        impl_t() : gvc(gvContext()) {}
+
+        ~impl_t() { gvFreeContext(gvc); }
+	
+        GVC_t* gvc = nullptr;
+    };
+    */
+
+    template<typename ObjectTraits>
+    struct impl_traits_t;
+
+    /*template<>
+    struct impl_traits_t<edge>
+    {
+        using pointer_t = Agedge_t*;
+    };
+
+    template<>
+    struct impl_traits_t<node>
+    {
+        using pointer_t = Agnode_t*;
+    };
+    */
+
+    template<typename ObjectT>
+    struct impl_accessor_t
+    {
+        using pointer_t = typename impl_traits_t<ObjectT>::pointer_t;
+        
+        impl_accessor_t(ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_))
         {
         }
 
-        const char* engine = nullptr;
+        impl_accessor_t(const ObjectT& o)
+            : obj(reinterpret_cast<pointer_t>(o.impl_))
+        {
+        }
+
+        operator pointer_t() const
+        {
+            return obj;
+        }
+
+        pointer_t obj = nullptr;
     };
+
+    /*template<>
+    struct impl_accessor_t<context>
+    {
+        using pointer_t = GVC_t*;
+        
+        impl_accessor_t(context& o)
+            : obj(o.impl_->gvc)
+        {
+        }
+
+        impl_accessor_t(const context& o)
+            : obj(o.impl_->gvc)
+        {
+        }
+
+        operator pointer_t() const
+        {
+            return obj;
+        }
+
+        pointer_t obj = nullptr;
+    };
+    */
 }
 
-#endif // GV_IMPL_OLD_H
+#endif // GV_IMPL_H

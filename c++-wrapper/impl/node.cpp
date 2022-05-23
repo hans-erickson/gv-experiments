@@ -22,17 +22,130 @@
 //  SOFTWARE.
 //  
 
-#include "../node.h"
-#include "../graph.h"
+#include "node_impl.h"
 
-#include "impl.h"
+#include "edge_impl.h"
+#include "object_impl.h"
 
+#include <optional>
 #include <string>
 
 namespace gv
 {
-    node::node(const factory_t& f)
-        : object(f)
+    template<>
+    struct object::bidirectional_iterator<node>::impl_t
+    {
+        static node
+        create_node(Agnode_t* ptr)
+        {
+            return node { object::constructor_arg_t { ptr}  };
+        }
+
+        impl_t(const constructor_arg_t& iter_arg)
+            : iter_arg_(iter_arg),
+              n_(create_node(iter_arg_.first()))
+        {
+        }
+
+        void first()
+        {
+            n_ = create_node(iter_arg_.first());
+        }
+
+        void last()
+        {
+            n_ = create_node(iter_arg_.last());
+        }
+
+        void next()
+        {
+            n_ = create_node(iter_arg_.next(get_native_ptr(&n_)));
+        }
+
+        void prev()
+        {
+            n_ = create_node(iter_arg_.prev(get_native_ptr(&n_)));
+        }
+        
+        constructor_arg_t iter_arg_;
+
+        node n_;
+    };
+
+    template<>
+    object::bidirectional_iterator<node>::bidirectional_iterator()
+        : impl_(nullptr)
+    {
+    }
+
+    template<>
+    object::bidirectional_iterator<node>::bidirectional_iterator(const constructor_arg_t& arg)
+        : impl_(std::make_shared<impl_t>(arg))
+    {}
+
+    template<>
+    object::bidirectional_iterator<node>::bidirectional_iterator(const bidirectional_iterator& i)
+        : impl_(i.impl_)
+    {}
+
+    template<>
+    object::bidirectional_iterator<node>&
+    object::bidirectional_iterator<node>::operator++()
+    {
+        impl_->next();
+        return *this;
+    }
+
+    template<>
+    object::bidirectional_iterator<node>&
+    object::bidirectional_iterator<node>::operator--()
+    {
+        impl_->prev();
+        return *this;
+    }
+    
+    template<>
+    object::bidirectional_iterator<node>
+    object::bidirectional_iterator<node>::operator++(int)
+    {
+        auto tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+    
+    template<>
+    object::bidirectional_iterator<node>
+    object::bidirectional_iterator<node>::operator--(int)
+    {
+        auto tmp = *this;
+        --(*this);
+        return tmp;
+    }
+    
+    template<>
+    node&
+    object::bidirectional_iterator<node>::operator*()
+    {
+        return impl_->n_;
+    }
+
+    template<>
+    node&
+    object::bidirectional_iterator<node>::operator*() const
+    {
+        return impl_->n_;
+    }
+
+    template<>
+    bool
+    object::bidirectional_iterator<node>::operator==(const bidirectional_iterator& other) const
+    {
+        return get_native_ptr(&impl_->n_) == get_native_ptr(&other.impl_->n_);
+    }
+
+
+    node::node(const constructor_arg_t& arg)
+        : object(arg)
     {
     }
 
@@ -41,39 +154,33 @@ namespace gv
     bool
     node::operator==(const node& other) const
     {
-        return (impl_accessor_t(*this) == impl_accessor_t(other));
+        return (get_native_ptr(this) == get_native_ptr(&other));
     }
 
-    std::vector<edge>
+    node::edge_view
     node::in_edges() const
     {
-        std::vector<edge> result;
+        forward_iterator<edge>::constructor_arg_t arg {
+            .first_func_ptr   = ::agfstin,
+            .next_func_ptr    = ::agnxtin,
+            .native_graph_ptr = ::agraphof(get_native_ptr(this)),
+            .native_node_ptr  = get_native_ptr(this)
+        };
 
-        auto this_node = impl_accessor_t(*this);
-        auto g = agraphof(this_node);
-
-        for (auto e = agfstin(g, this_node); e != nullptr; e = agnxtin(g, e))
-        {
-            result.push_back(factory_t{e});
-        }
-
-        return result;
+        return edge_view { edge_iterator{arg} };
     }
-        
-    std::vector<edge>
+
+    node::edge_view
     node::out_edges() const
     {
-        std::vector<edge> result;
+        forward_iterator<edge>::constructor_arg_t arg {
+            .first_func_ptr   = ::agfstout,
+            .next_func_ptr    = ::agnxtout,
+            .native_graph_ptr = ::agraphof(get_native_ptr(this)),
+            .native_node_ptr  = get_native_ptr(this)
+        };
 
-        auto this_node = impl_accessor_t(*this);
-        auto g = agraphof(this_node);
-        
-        for (auto e = agfstout(g, this_node); e != nullptr; e = agnxtout(g, e))
-        {
-            result.push_back(factory_t{e});
-        }
-
-        return result;
+        return edge_view { edge_iterator{arg} };
     }
 
     edge
@@ -81,9 +188,11 @@ namespace gv
     {
         tmp_string s(name);
 
-        auto this_node = impl_accessor_t(*this);
-        auto other_node = impl_accessor_t(other);
-        auto g = agraphof(this_node);
-        return edge(factory_t{agedge(g, this_node, other_node, s.str(), true)});
+        auto this_node = get_native_ptr(this);
+        auto other_node = get_native_ptr(&other);
+        auto g = ::agraphof(this_node);
+
+        return edge { ::agedge(g, this_node, other_node, s.str(), true) };
+        //return edge(factory_t{
     }
 }
