@@ -22,7 +22,9 @@
 //  SOFTWARE.
 //  
 
-#include "impl.h"
+#include "../layout.h"
+
+#include <gvc.h>
 
 #include <ostream>
 
@@ -33,8 +35,8 @@ namespace gv
         impl_t(const context& ctx, const graph& gobj)
         {
             //            gvc = ctx.impl_->gvc;
-            gvc = impl_accessor_t(ctx);
-            g = impl_accessor_t(gobj);
+            //gvc = impl_accessor_t(ctx);
+            //g = impl_accessor_t(gobj);
         }
 
         /*
@@ -88,8 +90,8 @@ namespace gv
         std::shared_ptr<graph_t> g;
         const char* engine = nullptr;
         */
-        GVC_t* gvc = nullptr;
-        Agraph_t* g = nullptr;
+        GVC_t*    gvc {};
+        Agraph_t* g   {};
     };
 
     layout::layout(const context& ctx, const graph& g)

@@ -27,33 +27,15 @@
 
 #include "../node.h"
 
-#include "impl_accessor.h"
-#include "streambuf_iodisc.h"
-#include "tmp_string.h"
-
 #include <cgraph.h>
 
 namespace gv
 {
     template<>
-    struct impl_traits<node>
-    {
-        using pointer_t = Agnode_t*;
-    };
-
-    template<>
     struct object::native_pointer_traits<node>
     {
         using pointer_type = Agnode_t*;
     };
-
-    /*
-    template<>
-    struct object::native_pointer_traits<const node>
-    {
-        using pointer_type = Agnode_t*;
-    };
-    */
 
     template<>
     struct object::bidirectional_iterator<node>::constructor_arg_t
@@ -89,40 +71,6 @@ namespace gv
             return prev_func_ptr(native_graph_ptr, node_ptr);
         }
     };
-
-
-    /*
-
-    struct node::constructor_arg_t
-    {
-        Agnode_t* ptr {};
-        using FirstFunc = Agnode_t* (*)(Agraph_t*);
-        using NextFunc  = Agnode_t* (*)(Agraph_t*, Agnode_t*);
-        using LastFunc  = Agnode_t* (*)(Agraph_t*);
-        using PrevFunc  = Agnode_t* (*)(Agraph_t*, Agnode_t*);
-
-        FirstFunc first_func_ptr   {};
-        NextFunc  next_func_ptr    {};
-        LastFunc  last_func_ptr    {};
-        PrevFunc  prev_func_ptr    {};
-        Agraph_t* native_graph_ptr {};
-    };
-        */
-
-    
-    /*
-    template<>
-    struct object::native_handle<node>
-    {
-        using pointer_t = impl_traits<node>::pointer_t;
-        pointer_t ptr {};
-    };
-    */
-
-
-    /*struct node::impl_t
-    {
-    };*/
 }
 
 #endif // !defined(GV_NODE_IMPL_H)

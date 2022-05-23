@@ -27,10 +27,6 @@
 
 #include "../object.h"
 
-#include "impl_accessor.h"
-#include "streambuf_iodisc.h"
-#include "tmp_string.h"
-
 #include <cgraph.h>
 
 namespace gv

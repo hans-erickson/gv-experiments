@@ -26,6 +26,7 @@
 #define GV_OBJECT_H
 
 #include <memory>
+#include <ranges>
 #include <string>
 #include <vector>
 #include <utility>
@@ -49,8 +50,6 @@
 //      when edges are added or removed, or when the object itself
 //      is destroyed
 
-//#include <iterator>
-#include <ranges>
 
 namespace gv
 {
@@ -67,23 +66,6 @@ namespace gv
         };
 
         using id_t = int;
-
-        /*
-        CGRAPH_API int agcontains(Agraph_t *, void *);
-        CGRAPH_API int agrelabel(void *obj, char *name);    // scary
-        CGRAPH_API int agrelabel_node(Agnode_t * n, char *newname);
-        CGRAPH_API int agdelete(Agraph_t * g, void *obj);
-        CGRAPH_API long agdelsubg(Agraph_t * g, Agraph_t * sub);    // could be agclose
-        CGRAPH_API int agdelnode(Agraph_t * g, Agnode_t * arg_n);
-        CGRAPH_API int agdeledge(Agraph_t * g, Agedge_t * arg_e);
-        */
-
-        /*
-;        CGRAPH_API Agobject_t *agfstobject(Agraph_t * g);
-        CGRAPH_API Agobject_t *agnxtobject(Agraph_t * g, Agobject_t * n);
-        CGRAPH_API Agobject_t *aglstobject(Agraph_t * g);
-        CGRAPH_API Agobject_t *agprvobject(Agraph_t * g, Agobject_t * n);
-        */
 
         std::string
         get(const std::string& key) const;
@@ -112,7 +94,7 @@ namespace gv
         {
         public:
             using difference_type = std::ptrdiff_t;
-            using value_type = T;
+            using value_type      = T;
 
             struct constructor_arg_t;
 
@@ -124,6 +106,7 @@ namespace gv
             T& operator*();
             T& operator*() const;
             bool operator==(const forward_iterator& other) const;
+            bool operator==(std::default_sentinel_t) const;
 
         private:
             struct impl_t;
@@ -135,7 +118,7 @@ namespace gv
         {
         public:
             using difference_type = std::ptrdiff_t;
-            using value_type = T;
+            using value_type      = T;
 
             struct constructor_arg_t;
 
@@ -149,6 +132,7 @@ namespace gv
             T& operator*();
             T& operator*() const;
             bool operator==(const bidirectional_iterator& other) const;
+            bool operator==(std::default_sentinel_t) const;
 
         private:
             struct impl_t;
@@ -166,17 +150,9 @@ namespace gv
             {
             }
 
-            Iterator
-            begin() const
-            {
-                return i_;
-            }
+            Iterator begin() const { return i_; }
 
-            std::nullptr_t
-            end() const
-            {
-                return nullptr;
-            }
+            std::default_sentinel_t end() const { return std::default_sentinel; }
 
         private:
             Iterator i_;

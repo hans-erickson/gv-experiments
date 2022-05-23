@@ -11,13 +11,13 @@ pkg_check_modules(Libgvc REQUIRED IMPORTED_TARGET libgvc)
 
 include_directories(${Libgvc_INCLUDE_DIRS})
 
-add_compile_options(-fconcepts-diagnostics-depth=4)
+add_compile_options(-fconcepts-diagnostics-depth=4 -g)
 
 set(COMMON_SRC
-#  impl/context.cpp
+  impl/context.cpp
   impl/edge.cpp
   impl/graph.cpp
-  #impl/layout.cpp
+  impl/layout.cpp
   impl/node.cpp
   impl/object.cpp)
 

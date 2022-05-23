@@ -13,6 +13,8 @@ set(COMMON_SRC
   main.cpp
   wrapper-test.cpp)
 
+add_compile_options(-g)
+
 add_executable(${PROJECT_NAME}
   ${COMMON_SRC})
 

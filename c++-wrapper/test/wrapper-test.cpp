@@ -95,7 +95,6 @@ TEST(WrapperTest, HelloTest)
         EXPECT_FALSE(hello.is_simple());
         EXPECT_FALSE(hello.is_undirected());
         auto nodes = hello.nodes();
-        //EXPECT_EQ(nodes.size(), 1);
         EXPECT_EQ((*nodes.begin()).name(), "Hello world!");
     }
 }
@@ -123,6 +122,52 @@ TEST(WrapperTest, HelloGoodbyeTest)
         auto out_edges1 = (*iter).out_edges();
         //EXPECT_EQ(out_edges1.size(), 0);
     }
+
+
+        {
+            gv::graph hibye{std::stringstream(hello_goodbye_dot)};
+            auto nodes = hibye.nodes();
+            auto iter = nodes.begin();
+            EXPECT_EQ((*iter).name(), "Hello world!");
+            ++iter;
+            EXPECT_EQ((*iter).name(), "Goodbye!");
+            ++iter;
+            EXPECT_EQ(iter, nodes.end());
+            --iter;
+            EXPECT_EQ((*iter).name(), "Goodbye!");
+            --iter;
+            EXPECT_EQ((*iter).name(), "Hello world!");
+            EXPECT_EQ((*iter++).name(), "Hello world!");
+            EXPECT_EQ((*iter).name(), "Goodbye!");
+
+            auto tmp0(iter);
+            EXPECT_EQ((*tmp0).name(), "Goodbye!");
+            --iter;
+            EXPECT_EQ((*tmp0).name(), "Goodbye!");
+            //EXPECT_EQ((*iter--).name(), "Goodbye!");
+            //EXPECT_EQ((*iter).name(), "Hello world!");            
+            /*auto tmp0 = iter;
+            ++iter;
+            EXPECT_EQ((*tmp0).name(), "Hello world!");
+            EXPECT_EQ((*iter).name(), "Goodbye!");
+            */
+            //auto tmp1 = iter--;
+            //EXPECT_EQ((*tmp1).name(), "Goodbye!");
+            //EXPECT_EQ((*iter).name(), "Hello world!");
+        }
+        /*
+        auto in_edges0 = (*iter).in_edges();
+        //EXPECT_EQ(in_edges0.size(), 0);
+        auto out_edges0 = (*iter).out_edges();
+        //EXPECT_EQ(out_edges0.size(), 1);
+        ++iter;
+        EXPECT_EQ((*iter).name(), "Goodbye!");
+        auto in_edges1 = (*iter).in_edges();
+        //EXPECT_EQ(in_edges1.size(), 1);
+        auto out_edges1 = (*iter).out_edges();
+        //EXPECT_EQ(out_edges1.size(), 0);
+    }
+        */
 }
 
 TEST(WrapperTest, CreateEdgeTest)

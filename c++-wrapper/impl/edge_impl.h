@@ -27,20 +27,16 @@
 
 #include "../edge.h"
 
-#include "impl_accessor.h"
-//#include "streambuf_iodisc.h"
-//#include "tmp_string.h"
-
 #include <cgraph.h>
 
 namespace gv
 {
     template<>
-    struct impl_traits<edge>
+    struct object::native_pointer_traits<edge>
     {
-        using pointer_t = Agedge_t*;
+        using pointer_type = Agedge_t*;
     };
-
+    
     template<>
     struct object::forward_iterator<edge>::constructor_arg_t
     {
@@ -51,35 +47,17 @@ namespace gv
         NextFunc  next_func_ptr    {};
         Agraph_t* native_graph_ptr {};
         Agnode_t* native_node_ptr  {};
+
+        Agedge_t* first()
+        {
+            return first_func_ptr(native_graph_ptr, native_node_ptr);
+        }
+
+        Agedge_t* next(Agedge_t* edge_ptr)
+        {
+            return next_func_ptr(native_graph_ptr, edge_ptr);
+        }
     };
-
-        /*
-        CGRAPH_API Agedge_t * 	agfstin (Agraph_t *g, Agnode_t *n)
- 
-        CGRAPH_API Agedge_t * 	agnxtin (Agraph_t *g, Agedge_t *e)
- 
-        CGRAPH_API Agedge_t * 	agfstout (Agraph_t *g, Agnode_t *n)
- 
-        CGRAPH_API Agedge_t * 	agnxtout (Agraph_t *g, Agedge_t *e)
- 
-        CGRAPH_API Agedge_t * 	agfstedge (Agraph_t *g, Agnode_t *n)
- 
-        CGRAPH_API Agedge_t * 	agnxtedge (Agraph_t *g, Agedge_t *e, Agnode_t *n)        
-        */
-
-    /*
-    template<>
-    struct object::native_handle<edge>
-    {
-        using pointer_t = impl_traits<edge>::pointer_t;
-        pointer_t ptr {};
-    };
-    */
-
-
-    /*struct edge::impl_t
-    {
-    };*/
 }
 
 #endif // !defined(GV_EDGE_IMPL_H)

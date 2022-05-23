@@ -24,7 +24,7 @@
 
 #include "../context.h"
 
-//#include "impl.h"
+#include "graph_impl.h"
 
 #include <gvc.h>
 
@@ -32,10 +32,10 @@
 
 namespace
 {
+        /*
     struct factory_helper_t
         : public gv::object
     {
-        /*
         static object::factory_t
         nextInputGraph(GVC_t* gvc)
         {
@@ -47,21 +47,26 @@ namespace
         {
             return object::factory_t { gvPluginsGraph(gvc) };
         }
-        */
     };
+        */
 }
 
 namespace gv
 {
+    struct context::impl_t
+    {
+        GVC_t *gvc {};
+    };
+
     context::context()
-        : impl_(std::make_unique<impl_t>())
+        : impl_(std::make_unique<impl_t>(::gvContext()))
     {
     }
 
     context::context(int argc, char* argv[])
         : impl_(std::make_unique<impl_t>())
     {
-        gvParseArgs(impl_->gvc, argc, argv);
+        ::gvParseArgs(impl_->gvc, argc, argv);
     }
 
     context::~context() = default;
@@ -69,7 +74,7 @@ namespace gv
     std::string
     context::buildDate() const
     {
-        return gvcBuildDate(impl_->gvc);
+        return ::gvcBuildDate(impl_->gvc);
     }
 
     std::vector<std::string>

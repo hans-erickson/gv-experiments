@@ -32,7 +32,6 @@
 namespace gv
 {
     class graph;
-    class layout;
 
     class context final
     {
@@ -59,7 +58,6 @@ namespace gv
         version() const;
 
     private:
-        template<typename> friend class impl_accessor_t;
         struct impl_t;
         std::unique_ptr<impl_t> impl_;
     };

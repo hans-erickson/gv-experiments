@@ -27,67 +27,17 @@
 
 #include "../graph.h"
 
-#include "object_impl.h"
-
-#include "impl_accessor.h"
 #include "streambuf_iodisc.h"
-#include "tmp_string.h"
 
 #include <cgraph.h>
 #include <map>
 
 namespace gv
 {
-    gv::streambuf_iodisc_t custom_iodisc;
-
-    Agdisc_t custom_disc
-    {
-        &AgMemDisc,
-        &AgIdDisc,
-        &custom_iodisc
-    };
-
     template<>
     struct object::native_pointer_traits<graph>
     {
         using pointer_type = Agraph_t*;
-    };
-
-    template<>
-    struct object::native_pointer_traits<const graph>
-    {
-        using pointer_type = Agraph_t*;
-    };
-
-    template<>
-    struct impl_traits<graph>
-    {
-        using pointer_t = Agraph_t*;
-    };
-
-    struct graph::impl_t
-    //: public object::impl_t
-    {
-        static Agraph_t*
-        agopen(const char* name, desc_t desc)
-        {
-            const static std::map<gv::graph::desc_t, Agdesc_t> desc_map =
-            {
-                { gv::graph::desc_t::directed,          Agdirected         },
-                { gv::graph::desc_t::strict_directed,   Agstrictdirected   },
-                { gv::graph::desc_t::undirected,        Agundirected       },
-                { gv::graph::desc_t::strict_undirected, Agstrictundirected }
-            };
-
-            tmp_string s(name);
-            return ::agopen(s.str(), desc_map.at(desc), &custom_disc);
-        }
-
-        static Agraph_t*
-        agread(const std::istream& in)
-        {
-            return ::agread(in.rdbuf(), &custom_disc);
-        }
     };
 }
 

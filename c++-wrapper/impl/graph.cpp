@@ -28,7 +28,7 @@
 #include "node_impl.h"
 #include "object_impl.h"
 
-#include "impl_accessor.h"
+#include "tmp_string.h"
 
 #include <cstring>
 #include <iostream>
@@ -38,14 +38,39 @@
 
 namespace gv
 {
-    /*
-    template<>
-    object::native_pointer_traits<graph>::pointer_type
-    object::get_native_ptr<graph>(graph* ptr)
+    streambuf_iodisc_t custom_iodisc;
+
+    Agdisc_t custom_disc
     {
-        return reinterpret_cast<native_pointer_traits<graph>::pointer_type>(ptr->impl_.get());
-    }
-    */
+        &AgMemDisc,
+        &AgIdDisc,
+        &custom_iodisc
+    };
+
+    struct graph::impl_t
+    {
+        static Agraph_t*
+        agopen(const char* name, desc_t desc)
+        {
+            const static std::map<gv::graph::desc_t, Agdesc_t> desc_map =
+            {
+                { gv::graph::desc_t::directed,          Agdirected         },
+                { gv::graph::desc_t::strict_directed,   Agstrictdirected   },
+                { gv::graph::desc_t::undirected,        Agundirected       },
+                { gv::graph::desc_t::strict_undirected, Agstrictundirected }
+            };
+
+            tmp_string s(name);
+            return ::agopen(s.str(), desc_map.at(desc), &custom_disc);
+        }
+
+        static Agraph_t*
+        agread(const std::istream& in)
+        {
+            return ::agread(in.rdbuf(), &custom_disc);
+        }
+    };
+
 
     graph::graph(const char* name,
                  desc_t desc)
@@ -90,15 +115,12 @@ namespace gv
     {
         tmp_string s(name);
         return constructor_arg_t { ::agnode(get_native_ptr(this), s.str(), true) };
-            //throw std::runtime_error("TODO:");
-        //return factory_t(agnode(native_handle_t(*this), s.str(), true));
     }
 
     node
     graph::create_node(id_t id)
     {
-        throw std::runtime_error("TODO:");
-        //return factory_t(agidnode(native_handle_t(*this), id, true));
+        return constructor_arg_t { ::agidnode(get_native_ptr(this), id, true) };
     }
 
     std::optional<node>
@@ -122,11 +144,10 @@ namespace gv
     {
         std::optional<gv::node> result;
 
-        auto nptr = agidnode(get_native_ptr(this), id, false);
+        auto nptr = ::agidnode(get_native_ptr(this), id, false);
         if (nptr)
         {
-            throw std::runtime_error("TODO:");
-            //result = gv::node(gv::node::factory_t{nptr});
+            result = node(nptr);
         }
 
         return result;
@@ -144,25 +165,6 @@ namespace gv
         };
 
         return node_view { node_iterator{ arg } };
-
-        //node_iterator fwd(constructor_arg_t{::agfstnode(get_native_ptr(this))});
-        //node_reverse_iterator rev(native_handle<node>{::aglstnode(native_handle(*this))});
-        
-        //graph::node_view result(agfstnode(native_handle_t(*this)),
-        //                        aglstnode(native_handle_t(*this)));
-
-        /*
-        std::vector<node> result;
-
-        for (auto n = agfstnode(native_handle_t(*this));
-             n != nullptr; n = agnxtnode(native_handle_t(*this), n))
-        {
-            throw std::runtime_error("TODO:");
-            //result.emplace_back(node::factory_t(n));
-        }
-        */
-
-        //return node_view(fwd);
     }
 
     void
@@ -171,23 +173,3 @@ namespace gv
         agwrite(get_native_ptr(this), out.rdbuf());
     }
 }
-
-/*
-•Agraph_t: a graph or subgraph
-•Agnode_t: a node from a particular graph or subgraph
-•Agedge_t: an edge from a particular graph or subgraph
-•Agsym_t: a descriptor for a string-value pair attribute
-•Agrec_t: an internal C data record attribute of a graph object
-*/
-
-/*
-{
-    for (n = agfstnode(g); n; n = agnxtnode(g,n))
-    {
-        for (e = agfstout(g,n); e; e = agnxtout(g,e))
-        {
-            // do something with e
-        }
-    }
-}
-*/

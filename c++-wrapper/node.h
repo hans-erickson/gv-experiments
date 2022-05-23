@@ -60,45 +60,11 @@ namespace gv
         : public object
     {
     public:
-        using edge_iterator         = forward_iterator<edge>;
-        using edge_view             = view<edge_iterator>;
-
-        //struct constructor_arg_t;
-        /*
-        class range
-        {
-        public:
-            concept bidirectional_iterator =
-                std::forward_iterator<I> &&
-                std::derived_from</ *ITER_CONCEPT* /<I>, std::bidirectional_iterator_tag> &&
-                requires(I i) {
-                { --i } -> std::same_as<I&>;
-                { i-- } -> std::same_as<I>;
-            range(node& n);
-            
-            iterator
-            begin();
-            
-            iterator
-            end();
-        };
-        */
-
-        //static_assert(std::ranges::bidirectional_range<range>);
-        //static_assert(std::ranges::common_range<range>);
-        //static_assert(std::ranges::borrowed_range<range>);
+        using edge_iterator = forward_iterator<edge>;
+        using edge_view     = view<edge_iterator>;
 
         node(const constructor_arg_t& arg);
         
-        //node(/*const factory_t& f*/);
-
-        /*
-;        CGRAPH_API Agnode_t *agfstnode(Agraph_t * g);
-        CGRAPH_API Agnode_t *agnxtnode(Agraph_t * g, Agnode_t * n);
-        CGRAPH_API Agnode_t *aglstnode(Agraph_t * g);
-        CGRAPH_API Agnode_t *agprvnode(Agraph_t * g, Agnode_t * n);
-        */
-
         ~node();
 
         bool

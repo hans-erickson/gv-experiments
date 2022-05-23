@@ -27,6 +27,8 @@
 #include "edge_impl.h"
 #include "object_impl.h"
 
+#include "tmp_string.h"
+
 #include <optional>
 #include <string>
 
@@ -100,7 +102,14 @@ namespace gv
     object::bidirectional_iterator<node>&
     object::bidirectional_iterator<node>::operator--()
     {
-        impl_->prev();
+        if (get_native_ptr(&impl_->n_))
+        {
+            impl_->prev();
+        }
+        else
+        {
+            impl_->last();
+        }
         return *this;
     }
     
@@ -141,6 +150,13 @@ namespace gv
     object::bidirectional_iterator<node>::operator==(const bidirectional_iterator& other) const
     {
         return get_native_ptr(&impl_->n_) == get_native_ptr(&other.impl_->n_);
+    }
+
+    template<>
+    bool
+    object::bidirectional_iterator<node>::operator==(std::default_sentinel_t) const
+    {
+        return get_native_ptr(&impl_->n_) == nullptr;
     }
 
 
@@ -193,6 +209,5 @@ namespace gv
         auto g = ::agraphof(this_node);
 
         return edge { ::agedge(g, this_node, other_node, s.str(), true) };
-        //return edge(factory_t{
     }
 }
