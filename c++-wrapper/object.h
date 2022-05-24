@@ -90,7 +90,7 @@ namespace gv
 
     protected:
         template<typename T>
-        class forward_iterator
+        class forward_iterator final
         {
         public:
             using difference_type = std::ptrdiff_t;
@@ -98,9 +98,15 @@ namespace gv
 
             struct constructor_arg_t;
 
-            forward_iterator(const constructor_arg_t& arg);
+            // Rule of five members
+            forward_iterator(const forward_iterator& other);
+            forward_iterator(forward_iterator&& other);
+            ~forward_iterator();
+            forward_iterator& operator=(const forward_iterator& other);
+            forward_iterator& operator=(forward_iterator&& other);
+
             forward_iterator() = default;
-            forward_iterator(const forward_iterator& i) = default;
+            forward_iterator(const constructor_arg_t& arg);
             forward_iterator& operator++();
             forward_iterator operator++(int);
             T& operator*();
@@ -110,11 +116,11 @@ namespace gv
 
         private:
             struct impl_t;
-            std::shared_ptr<impl_t> impl_;
+            std::unique_ptr<impl_t> impl_;
         };
 
         template<typename T>
-        class bidirectional_iterator
+        class bidirectional_iterator final
         {
         public:
             using difference_type = std::ptrdiff_t;
@@ -122,9 +128,15 @@ namespace gv
 
             struct constructor_arg_t;
 
+            // Rule of five members
+            bidirectional_iterator(const bidirectional_iterator& other);
+            bidirectional_iterator(bidirectional_iterator&& other);
+            ~bidirectional_iterator();
+            bidirectional_iterator& operator=(const bidirectional_iterator& other);
+            bidirectional_iterator& operator=(bidirectional_iterator&& other);
+
             bidirectional_iterator();
             bidirectional_iterator(const constructor_arg_t& arg);
-            bidirectional_iterator(const bidirectional_iterator& i);
             bidirectional_iterator& operator++();
             bidirectional_iterator& operator--();
             bidirectional_iterator operator++(int);
@@ -136,7 +148,7 @@ namespace gv
 
         private:
             struct impl_t;
-            std::shared_ptr<impl_t> impl_;
+            std::unique_ptr<impl_t> impl_;
         };
 
         template<typename Iterator>

@@ -60,6 +60,38 @@ namespace gv
         edge e_;
     };
 
+
+    // Rule of five members
+    template<>
+    object::forward_iterator<edge>::forward_iterator(const forward_iterator& other)
+        : impl_(std::make_unique<impl_t>(*other.impl_))
+    {}
+
+    template<>
+    object::forward_iterator<edge>::forward_iterator(forward_iterator&& other)
+        : impl_(std::move(impl_))
+    {}
+
+    template<>
+    object::forward_iterator<edge>::~forward_iterator() = default;
+
+    template<>
+    object::forward_iterator<edge>&
+    object::forward_iterator<edge>::operator=(const forward_iterator& other)
+    {
+        impl_ = std::make_unique<impl_t>(*other.impl_);
+        return *this;
+    }
+
+    template<>
+    object::forward_iterator<edge>&
+    object::forward_iterator<edge>::operator=(forward_iterator&& other)
+    {
+        impl_ = std::move(other.impl_);
+        return *this;
+    }
+
+    
     template<>
     object::forward_iterator<edge>::forward_iterator(const constructor_arg_t& arg)
         : impl_(std::make_unique<impl_t>(arg))

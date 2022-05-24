@@ -49,6 +49,12 @@ namespace gv
         {
         }
 
+        impl_t(const impl_t& other)
+            : iter_arg_(other.iter_arg_),
+              n_(other.n_)
+        {
+        }
+
         void first()
         {
             n_ = create_node(iter_arg_.first());
@@ -74,6 +80,38 @@ namespace gv
         node n_;
     };
 
+
+    // Rule of five members
+    template<>
+    object::bidirectional_iterator<node>::bidirectional_iterator(const bidirectional_iterator& other)
+        : impl_(std::make_unique<impl_t>(*other.impl_))
+    {}
+
+    template<>
+    object::bidirectional_iterator<node>::bidirectional_iterator(bidirectional_iterator&& other)
+        : impl_(std::move(impl_))
+    {}
+
+    template<>
+    object::bidirectional_iterator<node>::~bidirectional_iterator() = default;
+
+    template<>
+    object::bidirectional_iterator<node>&
+    object::bidirectional_iterator<node>::operator=(const bidirectional_iterator& other)
+    {
+        impl_ = std::make_unique<impl_t>(*other.impl_);
+        return *this;
+    }
+
+    template<>
+    object::bidirectional_iterator<node>&
+    object::bidirectional_iterator<node>::operator=(bidirectional_iterator&& other)
+    {
+        impl_ = std::move(other.impl_);
+        return *this;
+    }
+
+    
     template<>
     object::bidirectional_iterator<node>::bidirectional_iterator()
         : impl_(nullptr)
@@ -82,12 +120,7 @@ namespace gv
 
     template<>
     object::bidirectional_iterator<node>::bidirectional_iterator(const constructor_arg_t& arg)
-        : impl_(std::make_shared<impl_t>(arg))
-    {}
-
-    template<>
-    object::bidirectional_iterator<node>::bidirectional_iterator(const bidirectional_iterator& i)
-        : impl_(i.impl_)
+        : impl_(std::make_unique<impl_t>(arg))
     {}
 
     template<>
