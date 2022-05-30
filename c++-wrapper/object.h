@@ -57,36 +57,9 @@ namespace gv
 
     class object
     {
-    public:
-        enum class kind_t
-        {
-            graph,
-            node,
-            edge
-        };
-
-        using id_t = int;
-
-        std::string
-        get(const std::string& key) const;
-        
-        std::vector<std::pair<std::string, std::string>>
-        get_attributes() const;
-
-        graph
-        graph_of() const;
-
-        kind_t
-        kind() const;
-
-        std::string
-        name() const;
-
-        graph
-        root() const;
-
-        void
-        set(const std::string& key, const std::string& value);
+    private:
+        struct impl_t;
+        std::shared_ptr<impl_t> impl_;
 
     protected:
         template<typename T>
@@ -194,9 +167,57 @@ namespace gv
             return get_native_ptr(const_cast<T*>(t));
         }
         
-    private:
-        struct impl_t;
-        std::shared_ptr<impl_t> impl_;
+    public:
+        class attribute
+        {
+        public:
+            attribute() = default;
+
+            attribute(const constructor_arg_t& arg);
+
+            std::string
+            name();
+
+            std::string
+            value();
+
+        private:
+            impl_t* ptr_ { nullptr };
+        };
+
+        using attribute_iterator = forward_iterator<attribute>;
+        using attribute_view     = view<attribute_iterator>;
+
+        enum class kind_t
+        {
+            graph,
+            node,
+            edge
+        };
+
+        using id_t = int;
+
+        std::string
+        get(const std::string& key) const;
+        
+        attribute_view
+        get_attributes() const;
+
+        graph
+        graph_of() const;
+
+        kind_t
+        kind() const;
+
+        std::string
+        name() const;
+
+        graph
+        root() const;
+
+        void
+        set(const std::string& key, const std::string& value);
+
     };
 }
 

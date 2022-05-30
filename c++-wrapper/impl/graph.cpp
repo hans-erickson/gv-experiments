@@ -71,10 +71,14 @@ namespace gv
         }
     };
 
+    graph::graph(const constructor_arg_t& arg)
+        : object(arg)
+    {
+    }
 
     graph::graph(const char* name,
                  desc_t desc)
-        : object(object::constructor_arg_t(impl_t::agopen(name, desc)))
+        : object(object::constructor_arg_t(impl_t::agopen(name, desc), ::agclose))
     {
     }
 
@@ -83,9 +87,19 @@ namespace gv
     {
     }
 
-    // TODO: We need to call agclose in most cases, probably. (Maybe in all cases?)
-    graph::~graph() = default;
+    /*
+      CGRAPH_API Agobject_t *agfstobject(Agraph_t * g);
+      CGRAPH_API Agobject_t *agnxtobject(Agraph_t * g, Agobject_t * n);
+      CGRAPH_API Agobject_t *aglstobject(Agraph_t * g);
+      CGRAPH_API Agobject_t *agprvobject(Agraph_t * g, Agobject_t * n);
+    */
 
+    bool
+    graph::operator==(const graph& other) const
+    {
+        return (get_native_ptr(this) == get_native_ptr(&other));
+    }
+    
     bool
     graph::is_directed() const
     {

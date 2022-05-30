@@ -74,14 +74,15 @@ namespace gv
             strict_undirected
         };
 
-        graph(const object::constructor_arg_t& arg);
+        graph(const constructor_arg_t& arg);
 
         // Equivalent of agopen 
         graph(const char* name, desc_t kind);
 
         graph(const std::istream& in);
 
-        ~graph();
+        bool
+        operator==(const graph& other) const;
 
         //Agraph_t
         //*agconcat(Agraph_t *g, void *channel, Agdisc_t *disc);
@@ -100,11 +101,6 @@ namespace gv
 
         std::optional<node>
         find_node(id_t id);
-
-        /*
-        CGRAPH_API Agnode_t *agfstnode(Agraph_t * g);
-        CGRAPH_API Agnode_t *agnxtnode(Agraph_t * g, Agnode_t * n);
-        */
 
         bool
         is_directed() const;

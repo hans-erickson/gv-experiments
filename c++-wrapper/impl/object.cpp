@@ -24,6 +24,8 @@
 
 #include "object_impl.h"
 
+#include "tmp_string.h"
+
 #include <cgraph.h>
 
 #include <stdexcept>
@@ -81,16 +83,131 @@
 
 #include "object_impl.h"
 
+#include "graph_impl.h"
+
 namespace gv
 {
-    /*
     template<>
-    object::native_pointer_traits<object>::pointer_type
-    object::get_native_ptr<object>(object* ptr)
+    struct object::forward_iterator<object::attribute>::impl_t
     {
-        return ptr->impl_.get();
+        impl_t(const constructor_arg_t& iter_arg)
+            : iter_arg_(iter_arg),
+              sym_(nullptr)
+        {
+            next();
+        }
+
+        void next()
+        {
+            sym_  = ::agnxtattr(iter_arg_.graph, iter_arg_.kind, sym_);
+            attr_ = attribute(sym_);
+        }
+
+        constructor_arg_t iter_arg_;
+        Agsym_t* sym_ { };
+        attribute attr_;
+    };
+
+
+    // Rule of five members
+    template<>
+    object::forward_iterator<object::attribute>::forward_iterator(const forward_iterator& other)
+        : impl_(std::make_unique<impl_t>(*other.impl_))
+    {}
+
+    template<>
+    object::forward_iterator<object::attribute>::forward_iterator(forward_iterator&& other)
+        : impl_(std::move(impl_))
+    {}
+
+    template<>
+    object::forward_iterator<object::attribute>::~forward_iterator() = default;
+
+    template<>
+    object::forward_iterator<object::attribute>&
+    object::forward_iterator<object::attribute>::operator=(const forward_iterator& other)
+    {
+        impl_ = std::make_unique<impl_t>(*other.impl_);
+        return *this;
     }
-    */
+
+    template<>
+    object::forward_iterator<object::attribute>&
+    object::forward_iterator<object::attribute>::operator=(forward_iterator&& other)
+    {
+        impl_ = std::move(other.impl_);
+        return *this;
+    }
+
+    
+    template<>
+    object::forward_iterator<object::attribute>::forward_iterator(const constructor_arg_t& arg)
+        : impl_(std::make_unique<impl_t>(arg))
+    {
+    }
+
+    template<>
+    object::forward_iterator<object::attribute>&
+    object::forward_iterator<object::attribute>::operator++()
+    {
+        impl_->next();
+        return *this;
+    }
+
+    template<>
+    object::forward_iterator<object::attribute>
+    object::forward_iterator<object::attribute>::operator++(int)
+    {
+        forward_iterator tmp(*this);
+        operator++();
+        return tmp;
+    }
+    
+    template<>
+    object::attribute&
+    object::forward_iterator<object::attribute>::operator*()
+    {
+        return impl_->attr_;
+    }
+
+    template<>
+    object::attribute&
+    object::forward_iterator<object::attribute>::operator*() const
+    {
+        return impl_->attr_;
+    }
+
+    template<>
+    bool
+    object::forward_iterator<object::attribute>::operator==(const forward_iterator& other) const
+    {
+        return impl_->sym_ == other.impl_->sym_;
+    }
+
+    template<>
+    bool
+    object::forward_iterator<object::attribute>::operator==(std::default_sentinel_t) const
+    {
+        return impl_->sym_ == nullptr;
+    }
+
+
+    object::attribute::attribute(const constructor_arg_t& arg)
+        : ptr_ { arg.ptr_.get() }
+    {
+    }
+
+    std::string
+    object::attribute::name()
+    {
+        return reinterpret_cast<Agsym_t*>(ptr_)->name;
+    }
+
+    std::string
+    object::attribute::value()
+    {
+        return reinterpret_cast<Agsym_t*>(ptr_)->defval;
+    }
 
         /*
         CGRAPH_API Agraph_t *agraphof(void* obj);
@@ -106,62 +223,25 @@ namespace gv
         CGRAPH_API int agobjkind(void *);
         */
 
-        /*
-;        CGRAPH_API Agobject_t *agfstobject(Agraph_t * g);
-        CGRAPH_API Agobject_t *agnxtobject(Agraph_t * g, Agobject_t * n);
-        CGRAPH_API Agobject_t *aglstobject(Agraph_t * g);
-        CGRAPH_API Agobject_t *agprvobject(Agraph_t * g, Agobject_t * n);
-        */
 
-    /*
-    struct object::factory_t
-    {
-        void* obj = nullptr;
-    };
-
-    struct object::impl_t : factory_t {};
-    */
-
-    /*
     std::string
     object::get(const std::string& key) const
     {
         tmp_string s(key);
-        auto result = agget(impl_, s.str());
+        auto result = ::agget(get_native_ptr(this), s.str());
         return (result? result: "");
-    }
-
-    std::vector<std::pair<std::string, std::string>>
-    object::get_attributes() const
-    {
-        std::vector<std::pair<std::string, std::string>> result;
-        
-        int kind = agobjkind(impl_);
-        Agraph_t* g = agraphof(impl_);
-
-        //CGRAPH_API Agsym_t *agnxtattr(Agraph_t * g, int kind, Agsym_t * attr);
-
-        for (Agsym_t* sym = nullptr; sym = agnxtattr(g, kind, sym); )
-        {
-            result.emplace_back(std::pair(sym->name, sym->defval));
-            //printf("%s = %s\n",sym->name,sym->defval);
-        }
-        //sym = 0;    //to get the first one   while (sym = agnxtattr(g,AGNODE,sym)
-
-        return result;
     }
 
     graph
     object::graph_of() const
     {
-        return graph(factory_t{agraphof(impl_)});
-        //return convert_agraph(agraphof(impl_));
+        return graph { constructor_arg_t { ::agraphof(get_native_ptr(this)) } };
     }
 
     object::kind_t
     object::kind() const
     {
-        switch (agobjkind(impl_))
+        switch (::agobjkind(get_native_ptr(this)))
         {
             case AGRAPH:
             {
@@ -180,8 +260,18 @@ namespace gv
         }
         throw std::logic_error("Invalid object kind. (Internal error.)");
     }
-    */
 
+    object::attribute_view
+    object::get_attributes() const
+    {
+        forward_iterator<object::attribute>::constructor_arg_t arg {
+            .kind  = ::agobjkind(get_native_ptr(this)),
+            .graph = ::agraphof(get_native_ptr(this))
+        };
+
+        return attribute_view { attribute_iterator{arg} };
+    }
+    
     std::string
     object::name() const
     {
@@ -189,22 +279,22 @@ namespace gv
         return (s? s: "");
     }
 
-    /*
     graph
     object::root() const
     {
-        return factory_t{agroot(impl_)};
+        return graph { constructor_arg_t { ::agroot(get_native_ptr(this)) } };
     }
 
     void
     object::set(const std::string& key, const std::string& value)
     {
-        tmp_string ks(key);
-        tmp_string vs(value);
+        tmp_string key_s(key);
+        tmp_string value_s(value);
+        tmp_string default_s("");
+
         // TODO: Return value?
-        agset(impl_, ks.str(), vs.str());
+        ::agsafeset(get_native_ptr(this), key_s.str(), value_s.str(), default_s.str());
     }
-    */
 
     object::object(const constructor_arg_t& arg)
         : impl_{arg.ptr_}

@@ -35,13 +35,28 @@ namespace gv
     inline auto
     create_non_owned_ptr(T* ptr)
     {
-        return std::shared_ptr<T>(ptr, [](void*){});
+        return std::shared_ptr<T>(ptr, [](T*){});
     }
-    
+
+    template<typename T,
+             typename Deleter>
+    inline auto
+    create_owned_ptr(T* ptr, Deleter d)
+    {
+        return std::shared_ptr<T>(ptr, d);
+    }
+
     template<>
     struct object::native_pointer_traits<object>
     {
         using pointer_type = void*;
+    };
+
+    template<>
+    struct object::forward_iterator<object::attribute>::constructor_arg_t
+    {
+        int kind        {};
+        Agraph_t* graph {};
     };
 
     struct object::constructor_arg_t
@@ -55,9 +70,27 @@ namespace gv
             return std::shared_ptr<impl_t>(t_ptr, ptr);
         }
 
+        template<typename T,
+                 typename Deleter>
+        static auto
+        create_impl_ptr(T* t,
+                        Deleter d)
+        {
+            impl_t* ptr = reinterpret_cast<impl_t*>(t);
+            std::shared_ptr<T> t_ptr { create_owned_ptr(t, d) };
+            return std::shared_ptr<impl_t>(t_ptr, ptr);
+        }
+
         template<typename T>
         constructor_arg_t(T* t)
             : ptr_{create_impl_ptr(t)}
+        {
+        }
+
+        template<typename T,
+                 typename Deleter>
+        constructor_arg_t(T* t, Deleter d)
+            : ptr_{create_impl_ptr(t, d)}
         {
         }
 
